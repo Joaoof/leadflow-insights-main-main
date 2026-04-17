@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
@@ -17,13 +18,26 @@ import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { StateBadge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { FunnelChart } from "@/components/charts/FunnelChart";
-import { EvolutionLine } from "@/components/charts/EvolutionLine";
-import { SourceDonut } from "@/components/charts/SourceDonut";
 import { webhooksService } from "@/services/webhooks";
 import { metricsService } from "@/services/metrics";
 import { useClinic } from "@/hooks/useClinic";
 import { formatNumber, formatPercent, truncate, formatDate } from "@/lib/utils";
+
+const FunnelChart = lazy(() =>
+  import("@/components/charts/FunnelChart").then((module) => ({
+    default: module.FunnelChart,
+  }))
+);
+const EvolutionLine = lazy(() =>
+  import("@/components/charts/EvolutionLine").then((module) => ({
+    default: module.EvolutionLine,
+  }))
+);
+const SourceDonut = lazy(() =>
+  import("@/components/charts/SourceDonut").then((module) => ({
+    default: module.SourceDonut,
+  }))
+);
 
 function last6MonthsRange() {
   const end = new Date();
@@ -166,26 +180,28 @@ export function DashboardPage() {
             subtitle="Da entrada do lead até o tratamento em andamento"
           />
           <CardBody>
-            <FunnelChart
-              stages={[
-                { label: "Total de leads", count: total, tone: "blue" },
-                {
-                  label: "Agendados sem pagamento",
-                  count: semPag.data ?? 0,
-                  tone: "amber",
-                },
-                {
-                  label: "Agendados com pagamento",
-                  count: comPag.data ?? 0,
-                  tone: "violet",
-                },
-                {
-                  label: "Fechou / em tratamento",
-                  count: consultas.data ?? 0,
-                  tone: "emerald",
-                },
-              ]}
-            />
+            <Suspense fallback={<div className="skeleton h-60 w-full rounded-lg" />}>
+              <FunnelChart
+                stages={[
+                  { label: "Total de leads", count: total, tone: "blue" },
+                  {
+                    label: "Agendados sem pagamento",
+                    count: semPag.data ?? 0,
+                    tone: "amber",
+                  },
+                  {
+                    label: "Agendados com pagamento",
+                    count: comPag.data ?? 0,
+                    tone: "violet",
+                  },
+                  {
+                    label: "Fechou / em tratamento",
+                    count: consultas.data ?? 0,
+                    tone: "emerald",
+                  },
+                ]}
+              />
+            </Suspense>
           </CardBody>
         </Card>
 
@@ -203,7 +219,9 @@ export function DashboardPage() {
             {origem.isLoading ? (
               <div className="skeleton h-60 w-full rounded-lg" />
             ) : donutData.length ? (
-              <SourceDonut data={donutData} />
+              <Suspense fallback={<div className="skeleton h-60 w-full rounded-lg" />}>
+                <SourceDonut data={donutData} />
+              </Suspense>
             ) : (
               <EmptyState title="Sem origens registradas" />
             )}
@@ -226,7 +244,9 @@ export function DashboardPage() {
             {evolucao.isLoading ? (
               <div className="skeleton h-60 w-full rounded-lg" />
             ) : (evolucao.data?.length ?? 0) > 0 ? (
-              <EvolutionLine data={evolucao.data!} />
+              <Suspense fallback={<div className="skeleton h-60 w-full rounded-lg" />}>
+                <EvolutionLine data={evolucao.data!} />
+              </Suspense>
             ) : (
               <EmptyState title="Sem dados no período" />
             )}

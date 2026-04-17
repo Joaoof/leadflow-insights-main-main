@@ -1,6 +1,9 @@
 import { Suspense, lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { LoginPage } from "@/pages/LoginPage";
+import { DashboardPage } from "@/pages/DashboardPage";
+
 
 const DashboardLayout = lazy(() =>
   import("@/components/layout/DashboardLayout").then((module) => ({
@@ -76,6 +79,19 @@ const NotFoundPage = lazy(() =>
 
 function RouteLoader() {
   return (
+    <div className="min-h-[60vh]">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="skeleton h-28 w-full rounded-xl" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LazyRoute({ children }: { children: JSX.Element }) {
+  return <Suspense fallback={<RouteLoader />}>{children}</Suspense>;
+}
     <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-center text-sm text-slate-300">
       Carregando módulo…
     </div>
@@ -90,6 +106,41 @@ function RequireAuth({ children }: { children: JSX.Element }) {
 
 export default function App() {
   return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route
+        element={
+          <RequireAuth>
+            <DashboardLayout />
+          </RequireAuth>
+        }
+      >
+        <Route path="/" element={<DashboardPage />} />
+        <Route path="/leads" element={<LazyRoute><LeadsPage /></LazyRoute>} />
+        <Route
+          path="/leads/:id"
+          element={
+            <LazyRoute>
+              <LeadDetailPage />
+            </LazyRoute>
+          }
+        />
+        <Route path="/funnel" element={<LazyRoute><FunnelPage /></LazyRoute>} />
+        <Route path="/sources" element={<LazyRoute><SourcesPage /></LazyRoute>} />
+        <Route path="/evolution" element={<LazyRoute><EvolutionPage /></LazyRoute>} />
+        <Route path="/live" element={<LazyRoute><LiveMetricsPage /></LazyRoute>} />
+        <Route path="/analytics" element={<LazyRoute><AnalyticsPage /></LazyRoute>} />
+        <Route path="/alerts" element={<LazyRoute><AlertsPage /></LazyRoute>} />
+        <Route
+          path="/attendants"
+          element={<LazyRoute><AttendantsPage /></LazyRoute>}
+        />
+        <Route path="/units" element={<LazyRoute><UnitsPage /></LazyRoute>} />
+        <Route path="/reports" element={<LazyRoute><ReportsPage /></LazyRoute>} />
+        <Route path="/settings" element={<LazyRoute><SettingsPage /></LazyRoute>} />
+        <Route path="*" element={<LazyRoute><NotFoundPage /></LazyRoute>} />
+      </Route>
+    </Routes>
     <Suspense fallback={<RouteLoader />}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
