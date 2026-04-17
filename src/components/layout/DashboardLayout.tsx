@@ -2,7 +2,7 @@ import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 
-export function DashboardLayout() {
+export default function DashboardLayout() {
   return (
     <div className="min-h-screen flex bg-ink-950">
       <Sidebar />

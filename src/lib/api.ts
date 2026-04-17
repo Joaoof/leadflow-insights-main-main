@@ -1,4 +1,5 @@
 import axios, { AxiosError } from "axios";
+import type { ProblemDetails } from "@/types";
 import toast from "react-hot-toast";
 
 export const API_BASE_URL =
@@ -13,18 +14,30 @@ export const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("auth_token");
   if (token) config.headers.Authorization = `Bearer ${token}`;
+
   const adminKey = localStorage.getItem("admin_key");
   if (adminKey) config.headers["X-Admin-Key"] = adminKey;
+
+  const cloudiaBearerToken = localStorage.getItem("cloudia_bearer_token");
+  if (cloudiaBearerToken) {
+    config.headers["X-Cloudia-Bearer"] = cloudiaBearerToken;
+  }
+
+  const cloudiaBaseUrl = localStorage.getItem("cloudia_base_url");
+  if (cloudiaBaseUrl) {
+    config.headers["X-Cloudia-Base-Url"] = cloudiaBaseUrl;
+  }
+
   return config;
 });
 
 api.interceptors.response.use(
   (r) => r,
-  (error: AxiosError<any>) => {
+  (error: AxiosError<ProblemDetails>) => {
     const status = error.response?.status;
     const msg =
-      (error.response?.data as any)?.message ||
-      (error.response?.data as any)?.error ||
+      error.response?.data?.detail ||
+      error.response?.data?.title ||
       error.message;
 
     if (status === 401) {
@@ -51,4 +64,15 @@ export function setAuthToken(token: string | null) {
 export function setAdminKey(key: string | null) {
   if (key) localStorage.setItem("admin_key", key);
   else localStorage.removeItem("admin_key");
+}
+
+
+export function setCloudiaBearerToken(token: string | null) {
+  if (token) localStorage.setItem("cloudia_bearer_token", token);
+  else localStorage.removeItem("cloudia_bearer_token");
+}
+
+export function setCloudiaBaseUrl(url: string | null) {
+  if (url) localStorage.setItem("cloudia_base_url", url);
+  else localStorage.removeItem("cloudia_base_url");
 }

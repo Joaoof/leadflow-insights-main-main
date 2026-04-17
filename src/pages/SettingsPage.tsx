@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { KeyRound, ShieldCheck, Trash2 } from "lucide-react";
+import { KeyRound, ShieldCheck, Trash2, Link as LinkIcon } from "lucide-react";
 import toast from "react-hot-toast";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
@@ -8,14 +8,24 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { configService } from "@/services/config";
-import { setAdminKey } from "@/lib/api";
+import {
+  setAdminKey,
+  setCloudiaBaseUrl,
+  setCloudiaBearerToken,
+} from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 
-export function SettingsPage() {
+export default function SettingsPage() {
   const qc = useQueryClient();
   const [adminKey, setAdmin] = useState(localStorage.getItem("admin_key") ?? "");
   const [apiKey, setApiKey] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
+  const [cloudiaBearer, setCloudiaBearer] = useState(
+    localStorage.getItem("cloudia_bearer_token") ?? ""
+  );
+  const [cloudiaUrl, setCloudiaUrl] = useState(
+    localStorage.getItem("cloudia_base_url") ?? ""
+  );
 
   const status = useQuery({
     queryKey: ["cloudia-status"],
@@ -45,6 +55,11 @@ export function SettingsPage() {
     toast.success(adminKey ? "Admin key salva" : "Admin key removida");
   }
 
+  function saveCloudiaLocalConfig() {
+    setCloudiaBearerToken(cloudiaBearer || null);
+    setCloudiaBaseUrl(cloudiaUrl || null);
+    toast.success("Configuração Cloudia local salva");
+  }
   return (
     <>
       <PageHeader
@@ -77,6 +92,40 @@ export function SettingsPage() {
         </Card>
 
         <Card>
+          <CardHeader
+            title="Cloudia local (Bearer + URL)"
+            subtitle="Salvo no navegador; útil para testar e evitar 502 de URL incorreta"
+          />
+          <CardBody className="space-y-3">
+            <label className="label">Bearer token da Cloudia</label>
+            <Input
+              type="password"
+              icon={<KeyRound className="h-4 w-4" />}
+              value={cloudiaBearer}
+              onChange={(e) => setCloudiaBearer(e.target.value)}
+              placeholder="Bearer ..."
+            />
+
+            <label className="label">URL base da Cloudia</label>
+            <Input
+              type="url"
+              icon={<LinkIcon className="h-4 w-4" />}
+              value={cloudiaUrl}
+              onChange={(e) => setCloudiaUrl(e.target.value)}
+              placeholder="https://api.cloudia.com.br"
+            />
+
+            <p className="text-xs text-slate-400">
+              O app envia isso automaticamente nos headers <code>X-Cloudia-Bearer</code> e <code>X-Cloudia-Base-Url</code>.
+            </p>
+
+            <Button onClick={saveCloudiaLocalConfig} className="w-full justify-center">
+              Salvar Cloudia local
+            </Button>
+          </CardBody>
+        </Card>
+
+        <Card className="lg:col-span-2">
           <CardHeader
             title="API Cloudia"
             subtitle="Token salvo no backend (AppConfiguration)"

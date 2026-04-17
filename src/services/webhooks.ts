@@ -1,218 +1,183 @@
-/**
- * Webhooks API — aderente ao grupo "Webhooks" do OpenAPI.
- *
- * Observações do contrato:
- *  - GET /webhooks não aceita query params. A filtragem aqui é
- *    client-side em cima do retorno cru.
- *  - GET /webhooks/buscar-inicio-fim espera `date-time` (ISO).
- *  - GET /webhooks/consulta-periodos usa PascalCase:
- *      ClinicId, Ano, Mes, Semana (double), Dia.
- *  - GET /webhooks/active retorna `ActiveLeadDto[]` (schema do contrato).
- *  - GET /webhooks/count-by-state retorna `LeadsCountDto` (schema do contrato).
- */
-
 import { api } from "@/lib/api";
-import {
-  extractCountFromResponse,
-  normalizeActiveLeadList,
-  normalizeGroupCount,
-  normalizeLeadsCount,
-  normalizeOrigemAgrupada,
-  normalizePeriodSeries,
-  normalizeWebhookLeadList,
-} from "@/adapters/normalize";
-import { cleanParams, toIsoDateTime, toNumberOrUndef } from "@/api/params";
+import { asArray, cleanParams, toInt } from "@/lib/http";
 import type {
   ActiveLeadDto,
-  ActiveLeadsParams,
-  BuscarInicioFimParams,
-  ConsultaPeriodosParams,
-  GroupCountDto,
+  ApiCountPayload,
+  Lead,
   LeadsCountDto,
-  OrigemAgrupadaDto,
-  PeriodPointDto,
-  WebhookLead,
-} from "@/api/types";
+  OrigemAgrupada,
+  StageCount,
+  TimeSeriesPoint,
+} from "@/types";
+
+export interface LeadFilters {
+  clinicId?: number | string;
+  search?: string;
+  stage?: string;
+  state?: string;
+  source?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  pageSize?: number;
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
+}
+
+export interface ConsultaPeriodosParams {
+  ClinicId?: number | string;
+  Ano?: number;
+  Mes?: number;
+  Semana?: number;
+  Dia?: number;
+}
+
+function extractCount(data: ApiCountPayload | number | null | undefined): number {
+  if (typeof data === "number") return data;
+  if (!data) return 0;
+  return data.count ?? data.total ?? data.quantidade ?? 0;
+}
+
+function normalizeSourceGroup(data: unknown): Array<{ source: string; count: number }> {
+  return asArray<Record<string, unknown>>(data).map((item) => ({
+    source: String(item.source ?? item.origem ?? item.etapa ?? item.name ?? "—"),
+    count: Number(item.count ?? item.quantidade ?? item.total ?? 0),
+  }));
+}
+
+function normalizeStageGroup(data: unknown): StageCount[] {
+  return asArray<Record<string, unknown>>(data).map((item) => ({
+    stage: String(item.stage ?? item.etapa ?? item.name ?? "—"),
+    count: Number(item.count ?? item.quantidade ?? item.total ?? 0),
+  }));
+}
+
+function normalizeSeries(data: unknown): TimeSeriesPoint[] {
+  return asArray<Record<string, unknown>>(data).map((item) => ({
+    periodo: String(item.periodo ?? item.mes ?? item.data ?? item.label ?? "—"),
+    total: Number(item.total ?? item.count ?? item.quantidade ?? 0),
+  }));
+}
 
 export const webhooksService = {
-  /**
-   * GET /webhooks — lista bruta dos leads persistidos.
-   * OBSOLETO para consumo em larga escala: sem paginação/filtro.
-   * TODO backend: expor `GET /webhooks?unitId=&state=&page=&pageSize=`.
-   */
-  async listAllLeads(): Promise<WebhookLead[]> {
-    const { data } = await api.get<unknown>("/webhooks");
-    return normalizeWebhookLeadList(data);
-  },
-
-  /** GET /webhooks/consultas?clinicId= */
-  async getConsultasCount(clinicId?: number): Promise<number> {
-    const { data } = await api.get<unknown>("/webhooks/consultas", {
-      params: cleanParams({ clinicId }),
-    });
-    return extractCountFromResponse(data);
-  },
-
-  /** GET /webhooks/sem-pagamento?clinicId= */
-  async getWithoutPaymentCount(clinicId?: number): Promise<number> {
-    const { data } = await api.get<unknown>("/webhooks/sem-pagamento", {
-      params: cleanParams({ clinicId }),
-    });
-    return extractCountFromResponse(data);
-  },
-
-  /** GET /webhooks/com-pagamento?clinicId= */
-  async getWithPaymentCount(clinicId?: number): Promise<number> {
-    const { data } = await api.get<unknown>("/webhooks/com-pagamento", {
-      params: cleanParams({ clinicId }),
-    });
-    return extractCountFromResponse(data);
-  },
-
-  /** GET /webhooks/source-final?clinicId= */
-  async getSourceFinal(clinicId?: number): Promise<GroupCountDto[]> {
-    const { data } = await api.get<unknown>("/webhooks/source-final", {
-      params: cleanParams({ clinicId }),
-    });
-    return normalizeGroupCount(data, "source");
-  },
-
-  /** GET /webhooks/origem-cloudia?clinicId= */
-  async getOrigemCloudia(clinicId?: number): Promise<OrigemAgrupadaDto[]> {
-    const { data } = await api.get<unknown>("/webhooks/origem-cloudia", {
-      params: cleanParams({ clinicId }),
-    });
-    return normalizeOrigemAgrupada(data);
-  },
-
-  /** GET /webhooks/fim-de-semana?clinicId= */
-  async getWeekendLeads(clinicId?: number): Promise<WebhookLead[]> {
-    const { data } = await api.get<unknown>("/webhooks/fim-de-semana", {
-      params: cleanParams({ clinicId }),
-    });
-    return normalizeWebhookLeadList(data);
-  },
-
-  /** GET /webhooks/etapa-agrupada?clinicId= */
-  async getStageGrouped(clinicId?: number): Promise<GroupCountDto[]> {
-    const { data } = await api.get<unknown>("/webhooks/etapa-agrupada", {
-      params: cleanParams({ clinicId }),
-    });
-    return normalizeGroupCount(data, "stage");
-  },
-
-  /** GET /webhooks/buscar-inicio-fim?clinicId=&dataInicio=&dataFim=
-   *  Datas convertidas para ISO date-time como exige o contrato. */
-  async getRangeSeries(params: BuscarInicioFimParams): Promise<PeriodPointDto[]> {
-    const { data } = await api.get<unknown>("/webhooks/buscar-inicio-fim", {
+  async listLeads(filters: LeadFilters = {}): Promise<Lead[]> {
+    const { data } = await api.get<Lead[]>("/webhooks", {
       params: cleanParams({
-        clinicId: params.clinicId,
-        dataInicio: toIsoDateTime(params.dataInicio),
-        dataFim: toIsoDateTime(params.dataFim),
+        ...filters,
+        clinicId: toInt(filters.clinicId),
       }),
     });
-    return normalizePeriodSeries(data);
+
+    return asArray<Lead>(data);
+  },
+
+  async consultas(clinicId?: number | string): Promise<number> {
+    const { data } = await api.get<ApiCountPayload | number>("/webhooks/consultas", {
+      params: cleanParams({ clinicId: toInt(clinicId) }),
+    });
+    return extractCount(data);
+  },
+
+  async semPagamento(clinicId?: number | string): Promise<number> {
+    const { data } = await api.get<ApiCountPayload | number>("/webhooks/sem-pagamento", {
+      params: cleanParams({ clinicId: toInt(clinicId) }),
+    });
+    return extractCount(data);
+  },
+
+  async comPagamento(clinicId?: number | string): Promise<number> {
+    const { data } = await api.get<ApiCountPayload | number>("/webhooks/com-pagamento", {
+      params: cleanParams({ clinicId: toInt(clinicId) }),
+    });
+    return extractCount(data);
+  },
+
+  async sourceFinal(clinicId?: number | string): Promise<Array<{ source: string; count: number }>> {
+    const { data } = await api.get<unknown>("/webhooks/source-final", {
+      params: cleanParams({ clinicId: toInt(clinicId) }),
+    });
+
+    return normalizeSourceGroup(data);
+  },
+
+  async origemCloudia(clinicId?: number | string): Promise<OrigemAgrupada[]> {
+    const { data } = await api.get<OrigemAgrupada[]>("/webhooks/origem-cloudia", {
+      params: cleanParams({ clinicId: toInt(clinicId) }),
+    });
+
+    return asArray<OrigemAgrupada>(data);
+  },
+
+  async fimDeSemana(clinicId?: number | string): Promise<Lead[]> {
+    const { data } = await api.get<Lead[]>("/webhooks/fim-de-semana", {
+      params: cleanParams({ clinicId: toInt(clinicId) }),
+    });
+
+    return asArray<Lead>(data);
+  },
+
+  async etapaAgrupada(clinicId?: number | string): Promise<StageCount[]> {
+    const { data } = await api.get<unknown>("/webhooks/etapa-agrupada", {
+      params: cleanParams({ clinicId: toInt(clinicId) }),
+    });
+
+    return normalizeStageGroup(data);
+  },
+
+  async buscarInicioFim(params: {
+    clinicId?: number | string;
+    dataInicio?: string;
+    dataFim?: string;
+  }): Promise<TimeSeriesPoint[]> {
+    const { data } = await api.get<unknown>("/webhooks/buscar-inicio-fim", {
+      params: cleanParams({
+        clinicId: toInt(params.clinicId),
+        dataInicio: params.dataInicio,
+        dataFim: params.dataFim,
+      }),
+    });
+
+    return normalizeSeries(data);
   },
 
   /**
-   * GET /webhooks/consulta-periodos
-   * Contrato usa **PascalCase** nos query params.
+   * Swagger exige query params com inicial maiúscula: ClinicId, Ano, Mes, Semana, Dia.
    */
-  async getPeriodBuckets(
-    params: ConsultaPeriodosParams
-  ): Promise<PeriodPointDto[]> {
+  async consultaPeriodos(params: ConsultaPeriodosParams): Promise<TimeSeriesPoint[]> {
     const { data } = await api.get<unknown>("/webhooks/consulta-periodos", {
       params: cleanParams({
-        ClinicId: params.ClinicId,
+        ClinicId: toInt(params.ClinicId),
         Ano: params.Ano,
         Mes: params.Mes,
         Semana: params.Semana,
         Dia: params.Dia,
       }),
     });
-    return normalizePeriodSeries(data);
+
+    return normalizeSeries(data);
   },
 
-  /** GET /webhooks/active?limit=&unitId= — retorno tipado pelo contrato. */
-  async getActiveLeads(params: ActiveLeadsParams = {}): Promise<ActiveLeadDto[]> {
-    const { data } = await api.get<unknown>("/webhooks/active", {
-      params: cleanParams({ limit: params.limit, unitId: params.unitId }),
+  async activeLeads(params: { limit?: number; unitId?: number | string } = {}): Promise<ActiveLeadDto[]> {
+    const { data } = await api.get<ActiveLeadDto[]>("/webhooks/active", {
+      params: cleanParams({
+        limit: params.limit,
+        unitId: toInt(params.unitId),
+      }),
     });
-    return normalizeActiveLeadList(data);
+
+    return asArray<ActiveLeadDto>(data);
   },
 
-  /** GET /webhooks/count-by-state?unitId= — `LeadsCountDto`. */
-  async getCountByState(unitId?: number): Promise<LeadsCountDto> {
-    const { data } = await api.get<unknown>("/webhooks/count-by-state", {
-      params: cleanParams({ unitId }),
+  async countByState(unitId?: number | string): Promise<LeadsCountDto> {
+    const { data } = await api.get<LeadsCountDto>("/webhooks/count-by-state", {
+      params: cleanParams({ unitId: toInt(unitId) }),
     });
-    return normalizeLeadsCount(data);
+
+    return data ?? { bot: 0, queue: 0, service: 0, concluido: 0, total: 0 };
   },
 
-  /** GET /webhooks/sync/health */
-  async getSyncHealth(): Promise<unknown> {
+  async syncHealth(): Promise<unknown> {
     const { data } = await api.get<unknown>("/webhooks/sync/health");
     return data;
-  },
-
-  // ── Compat aliases (nomes usados pelas páginas existentes) ─────────
-  /** Alias legado de {@link getConsultasCount}. */
-  consultas(clinicId?: number | string | null): Promise<number> {
-    return this.getConsultasCount(toNumberOrUndef(clinicId));
-  },
-  /** Alias legado de {@link getWithPaymentCount}. */
-  comPagamento(clinicId?: number | string | null): Promise<number> {
-    return this.getWithPaymentCount(toNumberOrUndef(clinicId));
-  },
-  /** Alias legado de {@link getWithoutPaymentCount}. */
-  semPagamento(clinicId?: number | string | null): Promise<number> {
-    return this.getWithoutPaymentCount(toNumberOrUndef(clinicId));
-  },
-  /** Alias legado de {@link getSourceFinal}. */
-  sourceFinal(clinicId?: number | string | null): Promise<GroupCountDto[]> {
-    return this.getSourceFinal(toNumberOrUndef(clinicId));
-  },
-  /** Alias legado de {@link getOrigemCloudia}. */
-  origemCloudia(
-    clinicId?: number | string | null
-  ): Promise<OrigemAgrupadaDto[]> {
-    return this.getOrigemCloudia(toNumberOrUndef(clinicId));
-  },
-  /** Alias legado de {@link getStageGrouped}. */
-  etapaAgrupada(clinicId?: number | string | null): Promise<GroupCountDto[]> {
-    return this.getStageGrouped(toNumberOrUndef(clinicId));
-  },
-  /** Alias legado de {@link getRangeSeries}. */
-  buscarInicioFim(
-    params: {
-      clinicId?: number | string | null;
-      dataInicio: string;
-      dataFim: string;
-    }
-  ): Promise<PeriodPointDto[]> {
-    return this.getRangeSeries({
-      clinicId: toNumberOrUndef(params.clinicId),
-      dataInicio: params.dataInicio,
-      dataFim: params.dataFim,
-    });
-  },
-  /** Alias legado de {@link getActiveLeads}. */
-  activeLeads(params: ActiveLeadsParams = {}): Promise<ActiveLeadDto[]> {
-    return this.getActiveLeads(params);
-  },
-  /** Alias legado de {@link getCountByState}. */
-  countByState(unitId?: number | string | null): Promise<LeadsCountDto> {
-    return this.getCountByState(toNumberOrUndef(unitId));
-  },
-  /** Alias legado de {@link listAllLeads} — aceita filtro client-side
-   *  opcional por clinicId, já que o backend não suporta query params. */
-  async listLeads(
-    params: { clinicId?: number | string | null } = {}
-  ): Promise<WebhookLead[]> {
-    const all = await this.listAllLeads();
-    const clinicId = toNumberOrUndef(params.clinicId);
-    return clinicId === undefined
-      ? all
-      : all.filter((l) => l.clinicId === clinicId);
   },
 };

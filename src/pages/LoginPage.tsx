@@ -4,10 +4,12 @@ import { Gauge, Lock, Mail } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useAuth } from "@/hooks/useAuth";
+import { useClinic } from "@/hooks/useClinic";
 import toast from "react-hot-toast";
 
-export function LoginPage() {
+export default function LoginPage() {
   const { login } = useAuth();
+  const { setClinicId } = useClinic();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,8 +29,9 @@ export function LoginPage() {
       },
       "local-session"
     );
-    toast.success("Bem-vindo!");
-    navigate("/");
+    setClinicId("8020");
+    toast.success("Bem-vindo! Selecione sua unidade.");
+    navigate("/select-unit");
     setLoading(false);
   }
 

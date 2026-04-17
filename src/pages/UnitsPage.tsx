@@ -11,7 +11,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { unitsService } from "@/services/units";
 import { formatNumber } from "@/lib/utils";
 
-export function UnitsPage() {
+export default function UnitsPage() {
   const qc = useQueryClient();
   const units = useQuery({
     queryKey: ["units"],
@@ -19,7 +19,7 @@ export function UnitsPage() {
   });
 
   const [newClinicId, setNewClinicId] = useState("");
-  const [editing, setEditing] = useState<number | null>(null);
+  const [editing, setEditing] = useState<number | string | null>(null);
   const [editName, setEditName] = useState("");
 
   const createMut = useMutation({

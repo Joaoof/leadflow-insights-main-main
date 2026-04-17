@@ -1,104 +1,74 @@
-/**
- * LeadAnalytics API — rotas /api/analytics/*.
- *
- * Path params são inteiros conforme OpenAPI:
- *  - /api/analytics/leads/{id:int}/metrics
- *  - /api/analytics/units/{unitId:int}/leads-metrics
- *  - /api/analytics/units/{unitId:int}/summary
- *  - /api/analytics/units/{unitId:int}/alerts
- *  - /api/analytics/units/{unitId:int}/dashboard/today
- *
- * Datas (`startDate`, `endDate`) viajam como ISO date-time.
- */
-
 import { api } from "@/lib/api";
-import {
-  normalizeLeadMetrics,
-  normalizeLeadMetricsList,
-  normalizeUnitDashboardToday,
-  normalizeUnitSummary,
-} from "@/adapters/normalize";
-import { cleanParams, toIsoDateTime, toNumberOrUndef } from "@/api/params";
-import type {
-  LeadMetricsDto,
-  UnitDashboardTodayDto,
-  UnitLeadsMetricsParams,
-  UnitSummaryDto,
-  UnitSummaryParams,
-} from "@/api/types";
+import { cleanParams, toInt, asArray } from "@/lib/http";
+import type { LeadMetrics, UnitSummary } from "@/types";
+
+export interface UnitLeadsMetricsFilters {
+  startDate?: string;
+  endDate?: string;
+  state?: string;
+}
+
+export interface UnitSummaryFilters {
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface UnitTodayDashboard {
+  summary: UnitSummary;
+  alerts: LeadMetrics[];
+  topAttendants: Array<{ name: string; conversions: number; total: number }>;
+}
 
 export const analyticsService = {
-  async getLeadMetrics(id: number): Promise<LeadMetricsDto> {
-    const { data } = await api.get<unknown>(
-      `/api/analytics/leads/${id}/metrics`
-    );
-    return normalizeLeadMetrics(data);
+  async leadMetrics(leadId: number | string): Promise<LeadMetrics> {
+    const id = toInt(leadId);
+    if (!id) throw new Error("leadId inválido para /api/analytics/leads/{id}/metrics");
+
+    const { data } = await api.get<LeadMetrics>(`/api/analytics/leads/${id}/metrics`);
+    return data;
   },
 
-  async getUnitLeadsMetrics(
-    unitId: number,
-    params: UnitLeadsMetricsParams = {}
-  ): Promise<LeadMetricsDto[]> {
-    const { data } = await api.get<unknown>(
-      `/api/analytics/units/${unitId}/leads-metrics`,
-      {
-        params: cleanParams({
-          startDate: toIsoDateTime(params.startDate),
-          endDate: toIsoDateTime(params.endDate),
-          state: params.state,
-        }),
-      }
-    );
-    return normalizeLeadMetricsList(data);
-  },
-
-  async getUnitSummary(
-    unitId: number,
-    params: UnitSummaryParams = {}
-  ): Promise<UnitSummaryDto> {
-    const { data } = await api.get<unknown>(
-      `/api/analytics/units/${unitId}/summary`,
-      {
-        params: cleanParams({
-          startDate: toIsoDateTime(params.startDate),
-          endDate: toIsoDateTime(params.endDate),
-        }),
-      }
-    );
-    return normalizeUnitSummary(data);
-  },
-
-  async getUnitAlerts(unitId: number): Promise<LeadMetricsDto[]> {
-    const { data } = await api.get<unknown>(
-      `/api/analytics/units/${unitId}/alerts`
-    );
-    return normalizeLeadMetricsList(data);
-  },
-
-  async getUnitDashboardToday(unitId: number): Promise<UnitDashboardTodayDto> {
-    const { data } = await api.get<unknown>(
-      `/api/analytics/units/${unitId}/dashboard/today`
-    );
-    return normalizeUnitDashboardToday(data);
-  },
-
-  // ── Compat aliases — aceitam string|number para IDs ────────────────
-  leadMetrics(id: number | string): Promise<LeadMetricsDto> {
-    return this.getLeadMetrics(toNumberOrUndef(id) ?? 0);
-  },
-  unitLeadsMetrics(
+  async unitLeadsMetrics(
     unitId: number | string,
-    params: UnitLeadsMetricsParams = {}
-  ): Promise<LeadMetricsDto[]> {
-    return this.getUnitLeadsMetrics(toNumberOrUndef(unitId) ?? 0, params);
+    params: UnitLeadsMetricsFilters = {}
+  ): Promise<LeadMetrics[]> {
+    const id = toInt(unitId);
+    if (!id) throw new Error("unitId inválido para /api/analytics/units/{unitId}/leads-metrics");
+
+    const { data } = await api.get<LeadMetrics[]>(`/api/analytics/units/${id}/leads-metrics`, {
+      params: cleanParams(params),
+    });
+
+    return asArray<LeadMetrics>(data);
   },
-  unitSummary(
+
+  async unitSummary(
     unitId: number | string,
-    params: UnitSummaryParams = {}
-  ): Promise<UnitSummaryDto> {
-    return this.getUnitSummary(toNumberOrUndef(unitId) ?? 0, params);
+    params: UnitSummaryFilters = {}
+  ): Promise<UnitSummary> {
+    const id = toInt(unitId);
+    if (!id) throw new Error("unitId inválido para /api/analytics/units/{unitId}/summary");
+
+    const { data } = await api.get<UnitSummary>(`/api/analytics/units/${id}/summary`, {
+      params: cleanParams(params),
+    });
+
+    return data;
   },
-  unitAlerts(unitId: number | string): Promise<LeadMetricsDto[]> {
-    return this.getUnitAlerts(toNumberOrUndef(unitId) ?? 0);
+
+  async unitAlerts(unitId: number | string): Promise<LeadMetrics[]> {
+    const id = toInt(unitId);
+    if (!id) throw new Error("unitId inválido para /api/analytics/units/{unitId}/alerts");
+
+    const { data } = await api.get<LeadMetrics[]>(`/api/analytics/units/${id}/alerts`);
+    return asArray<LeadMetrics>(data);
+  },
+
+  async unitDashboardToday(unitId: number | string): Promise<UnitTodayDashboard> {
+    const id = toInt(unitId);
+    if (!id) throw new Error("unitId inválido para /api/analytics/units/{unitId}/dashboard/today");
+
+    const { data } = await api.get<UnitTodayDashboard>(`/api/analytics/units/${id}/dashboard/today`);
+    return data;
   },
 };

@@ -12,7 +12,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { analyticsService } from "@/services/analytics";
 import { formatDuration, formatNumber } from "@/lib/utils";
 
-export function AnalyticsPage() {
+export default function AnalyticsPage() {
   const [unitId, setUnitId] = useState(
     localStorage.getItem("lf.analytics.unitId") ?? ""
   );
