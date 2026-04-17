@@ -10,7 +10,7 @@ import { Badge, StateBadge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { analyticsService } from "@/services/analytics";
 
-export function AlertsPage() {
+export default function AlertsPage() {
   const [unitId, setUnitId] = useState(
     localStorage.getItem("lf.alerts.unitId") ?? ""
   );

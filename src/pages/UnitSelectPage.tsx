@@ -18,7 +18,7 @@ const fallbackUnits = [
   { id: "balsas", clinicId: "8025", name: "Doutor Hérnia Balsas" },
 ];
 
-export function UnitSelectPage() {
+export default function UnitSelectPage() {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const { clinicId, setClinicId } = useClinic();

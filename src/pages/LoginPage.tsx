@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useClinic } from "@/hooks/useClinic";
 import toast from "react-hot-toast";
 
-export function LoginPage() {
+export default function LoginPage() {
   const { login } = useAuth();
   const { setClinicId } = useClinic();
   const navigate = useNavigate();

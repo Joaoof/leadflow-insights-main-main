@@ -9,13 +9,10 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { configService } from "@/services/config";
 import {
-  setAdminKey,
-  setCloudiaBaseUrl,
-  setCloudiaBearerToken,
-} from "@/lib/api";
+  setAdminKey} from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 
-export function SettingsPage() {
+export default function SettingsPage() {
   const qc = useQueryClient();
   const [adminKey, setAdmin] = useState(localStorage.getItem("admin_key") ?? "");
   const [apiKey, setApiKey] = useState("");
@@ -54,13 +51,6 @@ export function SettingsPage() {
     setAdminKey(adminKey || null);
     toast.success(adminKey ? "Admin key salva" : "Admin key removida");
   }
-
-  function saveCloudiaLocalConfig() {
-    setCloudiaBearerToken(cloudiaBearer || null);
-    setCloudiaBaseUrl(cloudiaUrl || null);
-    toast.success("Configuração local da Cloudia salva");
-  }
-
   return (
     <>
       <PageHeader
@@ -119,10 +109,6 @@ export function SettingsPage() {
             <p className="text-xs text-slate-400">
               O app envia isso automaticamente nos headers <code>X-Cloudia-Bearer</code> e <code>X-Cloudia-Base-Url</code>.
             </p>
-
-            <Button onClick={saveCloudiaLocalConfig} className="w-full justify-center">
-              Salvar Cloudia local
-            </Button>
           </CardBody>
         </Card>
 

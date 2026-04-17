@@ -10,7 +10,7 @@ import { useClinic } from "@/hooks/useClinic";
 import { webhooksService } from "@/services/webhooks";
 import { formatNumber, formatPercent } from "@/lib/utils";
 
-export function SourcesPage() {
+export default function SourcesPage() {
   const { clinicId } = useClinic();
 
   const origem = useQuery({

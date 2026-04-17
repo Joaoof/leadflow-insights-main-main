@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Ghost } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
-export function NotFoundPage() {
+export default function NotFoundPage() {
   return (
     <div className="flex flex-col items-center justify-center text-center py-20">
       <Ghost className="h-14 w-14 text-slate-500 mb-3" />

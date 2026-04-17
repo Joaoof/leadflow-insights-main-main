@@ -11,7 +11,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { unitsService } from "@/services/units";
 import { formatNumber } from "@/lib/utils";
 
-export function UnitsPage() {
+export default function UnitsPage() {
   const qc = useQueryClient();
   const units = useQuery({
     queryKey: ["units"],
