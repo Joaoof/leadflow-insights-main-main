@@ -50,7 +50,7 @@ export function truncate(s: string | null | undefined, max = 40) {
   return s.length > max ? s.slice(0, max - 1) + "…" : s;
 }
 
-export function debounce<T extends (...a: any[]) => void>(fn: T, ms = 300) {
+export function debounce<T extends (...a: unknown[]) => void>(fn: T, ms = 300) {
   let t: ReturnType<typeof setTimeout>;
   return (...args: Parameters<T>) => {
     clearTimeout(t);

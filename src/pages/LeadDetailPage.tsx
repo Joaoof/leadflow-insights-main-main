@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge, StageBadge, StateBadge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { analyticsService } from "@/services/analytics";
-import { assignmentsService } from "@/services/assignments";
+import { assignmentsService, type AssignmentLeadHistoryItem } from "@/services/assignments";
 import { webhooksService } from "@/services/webhooks";
 import { formatDate, formatDuration } from "@/lib/utils";
 import { useClinic } from "@/hooks/useClinic";
@@ -42,7 +42,8 @@ export function LeadDetailPage() {
     queryKey: ["lead-find", id],
     queryFn: async () => {
       const all = await webhooksService.listLeads();
-      return all.find((l) => l.id === id || l.externalId === id);
+      const numericId = Number(id);
+      return all.find((l) => l.id === numericId || l.externalId === numericId);
     },
     enabled: !!id,
   });
@@ -181,7 +182,7 @@ export function LeadDetailPage() {
               <div className="skeleton h-40 w-full rounded" />
             ) : history.data && history.data.length > 0 ? (
               <ul className="space-y-3">
-                {history.data.map((h: any, i: number) => (
+                {history.data.map((h: AssignmentLeadHistoryItem, i: number) => (
                   <li key={i} className="flex items-start gap-3">
                     <div className="h-8 w-8 rounded-full bg-gradient-to-br from-brand-400 to-violet-600 grid place-items-center text-xs font-semibold shrink-0">
                       {(h.attendantName ?? "?").charAt(0).toUpperCase()}
@@ -191,7 +192,7 @@ export function LeadDetailPage() {
                         {h.attendantName ?? "Atendente"}
                       </p>
                       <p className="text-xs text-slate-400">
-                        {formatDate(h.assignedAt ?? h.createdAt)}
+                        {formatDate((h.assignedAt as string | undefined) ?? (h.createdAt as string | undefined))}
                       </p>
                     </div>
                   </li>

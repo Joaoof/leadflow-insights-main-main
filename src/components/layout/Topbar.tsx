@@ -1,4 +1,4 @@
-import { LogOut, RefreshCw, Search } from "lucide-react";
+import { Building2, LogOut, RefreshCw, Search } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 
 export function Topbar() {
   const { user, logout } = useAuth();
-  const { clinicId, setClinicId } = useClinic();
+  const { clinicId } = useClinic();
   const qc = useQueryClient();
   const navigate = useNavigate();
 
@@ -27,15 +27,14 @@ export function Topbar() {
         />
       </div>
 
-      <div className="hidden md:flex items-center gap-2">
-        <span className="text-xs text-slate-400 whitespace-nowrap">Clinic ID</span>
-        <Input
-          className="w-44"
-          placeholder="clinic-id"
-          value={clinicId}
-          onChange={(e) => setClinicId(e.target.value)}
-        />
+      <div className="hidden md:flex items-center gap-2 rounded-lg border border-white/10 px-3 py-1.5 bg-white/[0.02]">
+        <span className="text-xs text-slate-400 whitespace-nowrap">Unidade ativa</span>
+        <span className="text-xs font-mono text-slate-200">{clinicId || "—"}</span>
       </div>
+
+      <Button variant="outline" size="sm" onClick={() => navigate("/select-unit")}>
+        <Building2 className="h-4 w-4" /> Trocar unidade
+      </Button>
 
       <Button
         variant="ghost"

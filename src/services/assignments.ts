@@ -1,25 +1,45 @@
 import { api } from "@/lib/api";
-import type { Attendant, AttendantRanking } from "@/types";
+import { asArray, cleanParams, toInt } from "@/lib/http";
+import type { Attendant, AttendantRanking, SyncLeadDto } from "@/types";
+
+export interface AssignmentLeadHistoryItem {
+  timestamp?: string;
+  fromState?: string;
+  toState?: string;
+  attendantName?: string;
+  [key: string]: unknown;
+}
 
 export const assignmentsService = {
   async listAttendants(): Promise<Attendant[]> {
     const { data } = await api.get<Attendant[]>("/assignments/attendants");
-    return Array.isArray(data) ? data : [];
+    return asArray<Attendant>(data);
   },
-  async leadHistory(externalLeadId: string, clinicId?: string): Promise<any[]> {
-    const { data } = await api.get(`/assignments/lead/${externalLeadId}`, {
-      params: { clinicId },
+
+  async leadHistory(
+    externalLeadId: number | string,
+    clinicId?: number | string
+  ): Promise<AssignmentLeadHistoryItem[]> {
+    const leadId = toInt(externalLeadId);
+    if (!leadId) throw new Error("externalLeadId inválido para /assignments/lead/{externalLeadId}");
+
+    const { data } = await api.get<AssignmentLeadHistoryItem[]>(`/assignments/lead/${leadId}`, {
+      params: cleanParams({ clinicId: toInt(clinicId) }),
     });
-    return Array.isArray(data) ? data : [];
+
+    return asArray<AssignmentLeadHistoryItem>(data);
   },
-  async ranking(clinicId?: string): Promise<AttendantRanking[]> {
-    const { data } = await api.get<AttendantRanking[]>(`/assignments/ranking`, {
-      params: { clinicId },
+
+  async ranking(clinicId?: number | string): Promise<AttendantRanking[]> {
+    const { data } = await api.get<AttendantRanking[]>("/assignments/ranking", {
+      params: cleanParams({ clinicId: toInt(clinicId) }),
     });
-    return Array.isArray(data) ? data : [];
+
+    return asArray<AttendantRanking>(data);
   },
-  async syncLead(payload: Record<string, any>): Promise<any> {
-    const { data } = await api.post("/assignments/sync", payload);
+
+  async syncLead(payload: SyncLeadDto): Promise<unknown> {
+    const { data } = await api.post<unknown>("/assignments/sync", payload);
     return data;
   },
 };

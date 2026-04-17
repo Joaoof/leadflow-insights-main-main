@@ -1,16 +1,28 @@
 import { api } from "@/lib/api";
 
+export interface SetApiKeyRequest {
+  apiKey: string;
+  expiresAt?: string;
+}
+
+export interface CloudiaApiKeyStatus {
+  configured: boolean;
+  expiresAt?: string | null;
+}
+
 export const configService = {
-  async setCloudiaKey(payload: { apiKey: string; expiresAt?: string }) {
-    const { data } = await api.post("/api/config/cloudia-api-key", payload);
+  async setCloudiaKey(payload: SetApiKeyRequest): Promise<unknown> {
+    const { data } = await api.post<unknown>("/api/config/cloudia-api-key", payload);
     return data;
   },
-  async status(): Promise<{ configured: boolean; expiresAt?: string | null }> {
-    const { data } = await api.get("/api/config/cloudia-api-key/status");
+
+  async status(): Promise<CloudiaApiKeyStatus> {
+    const { data } = await api.get<CloudiaApiKeyStatus>("/api/config/cloudia-api-key/status");
     return data;
   },
-  async remove() {
-    const { data } = await api.delete("/api/config/cloudia-api-key");
+
+  async remove(): Promise<unknown> {
+    const { data } = await api.delete<unknown>("/api/config/cloudia-api-key");
     return data;
   },
 };
