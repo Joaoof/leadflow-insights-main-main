@@ -1,12 +1,27 @@
 import { Suspense, lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { useClinic } from "@/hooks/useClinic";
 import { LoginPage } from "@/pages/LoginPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { UnitSelectPage } from "@/pages/UnitSelectPage";
 
+
+
+const DashboardLayout = lazy(() =>
+  import("@/components/layout/DashboardLayout").then((module) => ({
+    default: module.DashboardLayout,
+  }))
+);
+
+const LoginPage = lazy(() =>
+  import("@/pages/LoginPage").then((module) => ({ default: module.LoginPage }))
+);
+const DashboardPage = lazy(() =>
+  import("@/pages/DashboardPage").then((module) => ({
+    default: module.DashboardPage,
+  }))
+);
 const LeadsPage = lazy(() =>
   import("@/pages/LeadsPage").then((module) => ({ default: module.LeadsPage }))
 );
@@ -80,6 +95,11 @@ function RouteLoader() {
 function LazyRoute({ children }: { children: JSX.Element }) {
   return <Suspense fallback={<RouteLoader />}>{children}</Suspense>;
 }
+    <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-center text-sm text-slate-300">
+      Carregando módulo…
+    </div>
+  );
+}
 
 function RequireAuth({ children }: { children: JSX.Element }) {
   const { user } = useAuth();
@@ -140,5 +160,32 @@ export default function App() {
         <Route path="*" element={<LazyRoute><NotFoundPage /></LazyRoute>} />
       </Route>
     </Routes>
+    <Suspense fallback={<RouteLoader />}>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route
+          element={
+            <RequireAuth>
+              <DashboardLayout />
+            </RequireAuth>
+          }
+        >
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/leads" element={<LeadsPage />} />
+          <Route path="/leads/:id" element={<LeadDetailPage />} />
+          <Route path="/funnel" element={<FunnelPage />} />
+          <Route path="/sources" element={<SourcesPage />} />
+          <Route path="/evolution" element={<EvolutionPage />} />
+          <Route path="/live" element={<LiveMetricsPage />} />
+          <Route path="/analytics" element={<AnalyticsPage />} />
+          <Route path="/alerts" element={<AlertsPage />} />
+          <Route path="/attendants" element={<AttendantsPage />} />
+          <Route path="/units" element={<UnitsPage />} />
+          <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+      </Routes>
+    </Suspense>
   );
 }
