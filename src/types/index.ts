@@ -107,6 +107,7 @@ export interface AttendantRanking {
 }
 
 export interface Unit {
+  logo_url: string | undefined;
   id: string;
   clinicId: string;
   name?: string | null;
