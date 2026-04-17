@@ -13,8 +13,20 @@ export const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("auth_token");
   if (token) config.headers.Authorization = `Bearer ${token}`;
+
   const adminKey = localStorage.getItem("admin_key");
   if (adminKey) config.headers["X-Admin-Key"] = adminKey;
+
+  const cloudiaBearerToken = localStorage.getItem("cloudia_bearer_token");
+  if (cloudiaBearerToken) {
+    config.headers["X-Cloudia-Bearer"] = cloudiaBearerToken;
+  }
+
+  const cloudiaBaseUrl = localStorage.getItem("cloudia_base_url");
+  if (cloudiaBaseUrl) {
+    config.headers["X-Cloudia-Base-Url"] = cloudiaBaseUrl;
+  }
+
   return config;
 });
 
@@ -51,4 +63,15 @@ export function setAuthToken(token: string | null) {
 export function setAdminKey(key: string | null) {
   if (key) localStorage.setItem("admin_key", key);
   else localStorage.removeItem("admin_key");
+}
+
+
+export function setCloudiaBearerToken(token: string | null) {
+  if (token) localStorage.setItem("cloudia_bearer_token", token);
+  else localStorage.removeItem("cloudia_bearer_token");
+}
+
+export function setCloudiaBaseUrl(url: string | null) {
+  if (url) localStorage.setItem("cloudia_base_url", url);
+  else localStorage.removeItem("cloudia_base_url");
 }
