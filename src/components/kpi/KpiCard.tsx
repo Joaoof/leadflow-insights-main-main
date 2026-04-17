@@ -4,52 +4,52 @@ import { cn, formatNumber } from "@/lib/utils";
 
 const toneConfig = {
   neutral: {
-    glow:      "bg-slate-400/5",
-    icon:      "bg-slate-400/10 text-slate-400",
-    bar:       "from-slate-400/0 via-slate-400/60 to-slate-400/0",
-    ring:      "ring-slate-400/20",
-    label:     "text-slate-400",
-    shimmer:   "via-slate-400/10",
+    orb:    "bg-slate-400/10",
+    icon:   "text-slate-400",
+    iconBg: "bg-slate-400/8 ring-slate-400/15",
+    bar:    "bg-slate-400",
+    label:  "text-slate-400",
+    value:  "text-white",
   },
   blue: {
-    glow:      "bg-blue-500/8",
-    icon:      "bg-blue-500/10 text-blue-400",
-    bar:       "from-blue-500/0 via-blue-400/70 to-blue-500/0",
-    ring:      "ring-blue-400/20",
-    label:     "text-blue-400",
-    shimmer:   "via-blue-400/10",
+    orb:    "bg-blue-500/12",
+    icon:   "text-blue-300",
+    iconBg: "bg-blue-500/10 ring-blue-400/20",
+    bar:    "bg-blue-400",
+    label:  "text-blue-400/80",
+    value:  "text-blue-50",
   },
   green: {
-    glow:      "bg-emerald-500/8",
-    icon:      "bg-emerald-500/10 text-emerald-400",
-    bar:       "from-emerald-500/0 via-emerald-400/70 to-emerald-500/0",
-    ring:      "ring-emerald-400/20",
-    label:     "text-emerald-400",
-    shimmer:   "via-emerald-400/10",
+    orb:    "bg-emerald-500/12",
+    icon:   "text-emerald-300",
+    iconBg: "bg-emerald-500/10 ring-emerald-400/20",
+    bar:    "bg-emerald-400",
+    label:  "text-emerald-400/80",
+    value:  "text-emerald-50",
   },
   amber: {
-    glow:      "bg-amber-500/8",
-    icon:      "bg-amber-500/10 text-amber-400",
-    bar:       "from-amber-500/0 via-amber-400/70 to-amber-500/0",
-    ring:      "ring-amber-400/20",
-    label:     "text-amber-400",
-    shimmer:   "via-amber-400/10",
+    orb:    "bg-amber-500/10",
+    icon:   "text-amber-300",
+    iconBg: "bg-amber-500/8 ring-amber-400/15",
+    bar:    "bg-amber-400",
+    label:  "text-amber-400/80",
+    value:  "text-amber-50",
   },
   red: {
-    glow:      "bg-red-500/8",
-    icon:      "bg-red-500/10 text-red-400",
-    bar:       "from-red-500/0 via-red-400/70 to-red-500/0",
-    ring:      "ring-red-400/20",
-    label:     "text-red-400",
-    shimmer:   "via-red-400/10",
+    orb:    "bg-red-500/10",
+    icon:   "text-red-300",
+    iconBg: "bg-red-500/8 ring-red-400/15",
+    bar:    "bg-red-400",
+    label:  "text-red-400/80",
+    value:  "text-red-50",
   },
   violet: {
-    glow:      "bg-violet-500/8",
-    icon:      "bg-violet-500/10 text-violet-400",
-    bar:       "from-violet-500/0 via-violet-400/70 to-violet-500/0",
-    ring:      "ring-violet-400/20",
-    label:     "text-violet-400",
-    shimmer:   "via-violet-400/10",
+    orb:    "bg-violet-500/12",
+    icon:   "text-violet-300",
+    iconBg: "bg-violet-500/10 ring-violet-400/20",
+    bar:    "bg-violet-400",
+    label:  "text-violet-400/80",
+    value:  "text-violet-50",
   },
 } as const;
 
@@ -76,117 +76,108 @@ export function KpiCard({
   return (
     <div
       className={cn(
-        "group relative overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5",
-        // ✅ só transform + opacity — compositor do browser, zero reflow
-        "transition-[transform,box-shadow,border-color,background-color] duration-300 ease-out",
-        "hover:-translate-y-0.5 hover:border-white/10 hover:bg-white/[0.05]",
-        "hover:shadow-xl hover:shadow-black/25"
+        "group relative flex flex-col justify-between overflow-hidden",
+        "rounded-2xl p-5 min-h-[130px]",
+        "bg-[rgba(255,255,255,0.03)]",
+        "border border-white/[0.07]",
+        "shadow-[0_1px_3px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.05)]",
+        "transition-[transform,box-shadow,border-color] duration-300 ease-out",
+        "hover:-translate-y-px",
+        "hover:border-white/[0.12]",
+        "hover:shadow-[0_8px_24px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.07)]",
       )}
     >
-      {/* Glow hover — só opacity, GPU-friendly */}
+      {/* Orb de luz no hover */}
       <div
         aria-hidden
         className={cn(
-          "pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100",
-          t.glow
+          "pointer-events-none absolute -top-4 -right-4 h-24 w-24 rounded-full blur-2xl",
+          "opacity-0 transition-opacity duration-500 group-hover:opacity-100",
+          t.orb
         )}
       />
 
-      {/* Shimmer sweep no hover — translateX, não width */}
-      <div
-        aria-hidden
-        className={cn(
-          "pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full",
-          t.shimmer
-        )}
-      />
+      {/* Topo: label + ícone */}
+      <div className="relative flex items-start justify-between gap-2">
+        <span className={cn(
+          "text-[11px] font-semibold uppercase tracking-[0.13em]",
+          "transition-colors duration-300",
+          t.label
+        )}>
+          {label}
+        </span>
 
-      {/* Barra lateral fade */}
-      <div
-        aria-hidden
-        className={cn(
-          "absolute inset-y-3 left-0 w-[2px] rounded-full bg-gradient-to-b transition-opacity duration-300 group-hover:opacity-100 opacity-50",
-          t.bar
-        )}
-      />
-
-      <div className="relative flex flex-col gap-3">
-
-        {/* Header: label chamativo + ícone */}
-        <div className="flex items-center justify-between gap-3">
-          <span
-            className={cn(
-              // Título mais chamativo: cor do tone + tracking agressivo
-              "text-[11px] font-bold uppercase tracking-[0.15em] transition-colors duration-300",
-              // Em repouso: apagado; no hover: acende na cor do tone
-              "text-slate-500 group-hover:" + t.label.replace("text-", ""),
-              t.label.includes("slate") && "group-hover:text-slate-400"
-            )}
-          >
-            {label}
+        {icon && (
+          <span className={cn(
+            "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl",
+            "ring-1 transition-[transform,ring-color] duration-300",
+            "group-hover:scale-105",
+            t.icon,
+            t.iconBg
+          )}>
+            <span className="[&>svg]:h-4 [&>svg]:w-4">{icon}</span>
           </span>
+        )}
+      </div>
 
-          {icon && (
-            <span
-              className={cn(
-                "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ring-1",
-                // scale no hover — transform, seguro
-                "transition-[transform,box-shadow,ring] duration-300 group-hover:scale-110 group-hover:ring-2",
-                t.icon,
-                t.ring
-              )}
-            >
-              {icon}
-            </span>
-          )}
-        </div>
-
-        {/* Valor principal */}
-        <div className="flex items-baseline gap-2.5">
+      {/* Centro: valor + trend */}
+      <div className="relative mt-3 flex items-end justify-between gap-2">
+        <div className="flex items-baseline gap-2">
           {loading ? (
-            <div className="skeleton h-9 w-28 rounded-lg" />
+            <div className="skeleton h-8 w-24 rounded-lg" />
           ) : (
-            <span
-              className={cn(
-                "text-[2rem] font-black leading-none tracking-tight text-white",
-                // Leve scale no valor ao hover — imperceptível mas polido
-                "transition-transform duration-300 group-hover:scale-[1.01] origin-left"
-              )}
-            >
+            <span className={cn(
+              "text-[1.85rem] font-bold leading-none tracking-tight tabular-nums",
+              "transition-colors duration-300",
+              t.value
+            )}>
               {typeof value === "number" ? formatNumber(value) : value}
             </span>
           )}
 
           {trend !== undefined && !loading && (
-            <span
-              className={cn(
-                "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold tabular-nums",
-                // fadeIn suave — opacity, seguro
-                "transition-[opacity,transform] duration-300 group-hover:opacity-100 opacity-80 group-hover:translate-y-0 translate-y-0.5",
-                trendUp
-                  ? "bg-emerald-500/10 text-emerald-400"
-                  : "bg-red-500/10 text-red-400"
-              )}
-            >
+            <span className={cn(
+              "mb-0.5 inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5",
+              "text-[10.5px] font-bold tabular-nums",
+              "transition-[opacity,transform] duration-300",
+              "opacity-70 translate-y-0.5 group-hover:opacity-100 group-hover:translate-y-0",
+              trendUp
+                ? "bg-emerald-500/10 text-emerald-400"
+                : "bg-red-500/10 text-red-400"
+            )}>
               {trendUp
-                ? <TrendingUp className="h-3 w-3 shrink-0" />
-                : <TrendingDown className="h-3 w-3 shrink-0" />
+                ? <TrendingUp className="h-2.5 w-2.5 shrink-0" />
+                : <TrendingDown className="h-2.5 w-2.5 shrink-0" />
               }
               {trendUp ? "+" : "−"}{Math.abs(trend).toFixed(1)}%
             </span>
           )}
         </div>
-
-        {/* Divisor + Subtítulo */}
-        {subtitle && (
-          <>
-            <div className="h-px bg-white/[0.04] transition-colors duration-300 group-hover:bg-white/[0.08]" />
-            <p className="text-[11px] leading-5 text-slate-500 transition-colors duration-300 group-hover:text-slate-400">
-              {subtitle}
-            </p>
-          </>
-        )}
       </div>
+
+      {/* Subtítulo */}
+      {subtitle && (
+        <div className="relative mt-3 space-y-1.5">
+          <div className="h-[1px] bg-white/[0.05] transition-colors duration-300 group-hover:bg-white/[0.09]" />
+          <p className={cn(
+            "text-[10.5px] leading-4 text-slate-500",
+            "transition-colors duration-300 group-hover:text-slate-400"
+          )}>
+            {subtitle}
+          </p>
+        </div>
+      )}
+
+      {/* ── Barra inferior — sempre visível, brilha no hover ── */}
+      <div
+        aria-hidden
+        className={cn(
+          "absolute bottom-0 left-0 right-0 h-[2px]",
+          "bg-gradient-to-r from-transparent via-current to-transparent",
+          "opacity-30 transition-opacity duration-300 group-hover:opacity-70",
+          t.bar
+        )}
+      />
     </div>
   );
 }

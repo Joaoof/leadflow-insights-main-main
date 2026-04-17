@@ -5,6 +5,7 @@ type PageHeaderProps = {
   description?: string;
   actions?: ReactNode;
   badge?: string;
+  backgroundImage?: string;   // ← URL da imagem
 };
 
 export function PageHeader({
@@ -12,15 +13,34 @@ export function PageHeader({
   description,
   actions,
   badge = "Clínica",
+  backgroundImage,
 }: PageHeaderProps) {
-  return (
-    <header className="relative mb-8 overflow-hidden rounded-3xl bg-gradient-to-br from-sky-600 via-sky-500 to-teal-400 p-[1px] shadow-xl shadow-sky-500/20">
+   return (
+    <header className="relative mb-8 overflow-hidden rounded-3xl bg-gradient-to-br fro'm-sky-100 via-sky-100 to-teal-100 p-[1px] shadow-xl shadow-sky-500/20">
       {/* Card interno */}
       <div className="relative overflow-hidden rounded-[23px] bg-white px-7 py-6 md:px-10 md:py-7">
 
-        {/* Círculo decorativo fundo direito */}
-        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-gradient-to-br from-sky-100 to-teal-100 opacity-60" />
-        <div className="pointer-events-none absolute -bottom-8 right-24 h-32 w-32 rounded-full bg-teal-100/50" />
+        {/* ── Imagem de fundo (opcional) ── */}
+        {backgroundImage && (
+          <>
+            <img
+              src={backgroundImage}
+              alt=""
+              aria-hidden
+              className="absolute inset-0 h-full w-full object-cover object-center"
+            />
+            {/* Overlay que garante legibilidade sobre qualquer imagem */}
+            <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-white/30" />
+          </>
+        )}
+
+        {/* Círculos decorativos — só aparecem sem imagem */}
+        {!backgroundImage && (
+          <>
+            <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-gradient-to-br from-sky-100 to-teal-100 opacity-60" />
+            <div className="pointer-events-none absolute -bottom-8 right-24 h-32 w-32 rounded-full bg-teal-100/50" />
+          </>
+        )}
 
         <div className="relative flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-start gap-4">

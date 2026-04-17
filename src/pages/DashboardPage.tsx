@@ -1,12 +1,15 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
   CalendarCheck,
+  CalendarX,
   CreditCard,
+  DollarSign,
   HeartHandshake,
   Percent,
   Radio,
+  Stethoscope,
   TrendingUp,
   UserPlus,
   Users,
@@ -22,6 +25,7 @@ import { webhooksService } from "@/services/webhooks";
 import { metricsService } from "@/services/metrics";
 import { useClinic } from "@/hooks/useClinic";
 import { formatNumber, formatPercent, truncate, formatDate } from "@/lib/utils";
+import { DashboardFilters, DashboardFiltersState, defaultFilters } from "@/components/filters/DashboardFilters";
 
 const FunnelChart = lazy(() =>
   import("@/components/charts/FunnelChart").then((module) => ({
@@ -97,7 +101,10 @@ export default function DashboardPage() {
   queryKey: ["/webhooks/total-leads", tenantId],
   queryFn: () => webhooksService.getTotalLeads(tenantId ?? 0),
   enabled: tenantId !== null,
-});
+  });
+
+  const [filters, setFilters] = useState<DashboardFiltersState>(defaultFilters);
+
 
   const total = totalLeadQuery.data ?? 0;
   const conversao = total > 0 ? ((consultas.data ?? 0) / total) * 100 : 0;
@@ -117,6 +124,8 @@ export default function DashboardPage() {
         ? `Performance consolidada · unitId: ${unitId}`
         : "Performance consolidada — selecione um Unit ID na topbar para filtrar."
     }
+    backgroundImage="https://i.postimg.cc/vH3zxNPf/Gemini-Generated-Image-ksegwnksegwnkseg.png"
+      badge="Clínica"
     actions={
       <>
         <Link to="/live">
@@ -143,51 +152,103 @@ export default function DashboardPage() {
     }
   />
 
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-        <KpiCard
-          label="Total de leads"
-          value={total}
-          icon={<Users className="h-5 w-5" />}
-          tone="blue"
-          loading={states.isLoading}
-        />
-        <KpiCard
-          label="Em atendimento"
-          value={states.data?.service ?? 0}
-          icon={<HeartHandshake className="h-5 w-5" />}
-          tone="violet"
-          loading={states.isLoading}
-        />
-        <KpiCard
-          label="Na fila"
-          value={states.data?.queue ?? 0}
-          icon={<UserPlus className="h-5 w-5" />}
-          tone="amber"
-          loading={states.isLoading}
-        />
-        <KpiCard
-          label="Com pagamento"
-          value={comPag.data ?? 0}
-          icon={<CreditCard className="h-5 w-5" />}
-          tone="green"
-          loading={comPag.isLoading}
-        />
-        <KpiCard
-          label="Fechou / Tratamento"
-          value={consultas.data ?? 0}
-          icon={<TrendingUp className="h-5 w-5" />}
-          tone="green"
-          loading={consultas.isLoading}
-        />
-        <KpiCard
-          label="Taxa de conversão"
-          value={formatPercent(conversao)}
-          icon={<Percent className="h-5 w-5" />}
-          tone="blue"
-          loading={consultas.isLoading || states.isLoading}
-          subtitle={`${formatPercent(pagamentoRate)} pagam na hora`}
-        />
+      <div className="mb-10">
+      <DashboardFilters
+      value={filters}
+      onChange={setFilters}
+      onSearch={() => {
+        // React Query refetch automático pelas queryKeys — mas se quiser forçar:
+        states.refetch();
+        consultas.refetch();
+        comPag.refetch();
+        semPag.refetch();
+        evolucao.refetch();
+      }}
+      />
       </div>
+
+
+    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+      {/* ── Linha 1 ── */}
+      <KpiCard
+        label="Total de leads"
+        value={total}
+        icon={<Users className="h-5 w-5" />}
+        tone="blue"
+        loading={totalLeadQuery.isLoading}
+      />
+      <KpiCard
+        label="Em atendimento"
+        value={states.data?.service ?? 0}
+        icon={<HeartHandshake className="h-5 w-5" />}
+        tone="violet"
+        loading={states.isLoading}
+      />
+      <KpiCard
+        label="Na fila"
+        value={states.data?.queue ?? 0}
+        icon={<UserPlus className="h-5 w-5" />}
+        tone="amber"
+        loading={states.isLoading}
+      />
+      <KpiCard
+        label="Taxa de conversão"
+        value={formatPercent(conversao)}
+        icon={<Percent className="h-5 w-5" />}
+        tone="blue"
+        loading={consultas.isLoading || totalLeadQuery.isLoading}
+        subtitle={`${formatPercent(pagamentoRate)} pagam na hora`}
+      />
+      <KpiCard
+        label="CAC"
+        value="—"
+        icon={<DollarSign className="h-5 w-5" />}
+        tone="amber"
+        subtitle="Custo por aquisição"
+      />
+
+      {/* ── Linha 2 ── */}
+      <KpiCard
+        label="Agend. c/ pagamento"
+        value={comPag.data ?? 0}
+        icon={<CreditCard className="h-5 w-5" />}
+        tone="green"
+        loading={comPag.isLoading}
+        subtitle="Agendados e pagos"
+      />
+      <KpiCard
+        label="Agend. s/ pagamento"
+        value={semPag.data ?? 0}
+        icon={<CalendarX className="h-5 w-5" />}
+        tone="red"
+        loading={semPag.isLoading}
+        subtitle="Agendados sem pagar"
+      />
+      <KpiCard
+        label="Em tratamento"
+        value={consultas.data ?? 0}
+        icon={<Stethoscope className="h-5 w-5" />}
+        tone="green"
+        loading={consultas.isLoading}
+        subtitle="Fechou / tratando"
+      />
+      <KpiCard
+        label="Fecharam"
+        value={consultas.data ?? 0}
+        icon={<TrendingUp className="h-5 w-5" />}
+        tone="violet"
+        loading={consultas.isLoading}
+        subtitle="Convertidos total"
+      />
+      <KpiCard
+        label="S/ pagamento %"
+        value={total > 0 ? formatPercent(((semPag.data ?? 0) / total) * 100) : "—"}
+        icon={<AlertTriangle className="h-5 w-5" />}
+        tone="amber"
+        loading={semPag.isLoading || totalLeadQuery.isLoading}
+        subtitle="Taxa sem pagamento"
+      />
+    </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-6">
         <Card className="lg:col-span-2">

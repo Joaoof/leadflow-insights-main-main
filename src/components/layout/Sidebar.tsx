@@ -58,12 +58,10 @@ export function Sidebar() {
         <div
           className={cn(
             "h-10 w-10 shrink-0 overflow-hidden rounded-xl",
-            "ring-1 ring-white/[0.08]",
-            "shadow-[0_0_16px_rgba(139,92,246,0.3)]"
           )}
         >
           <img
-            src="https://i.postimg.cc/SRsTKqyL/Copia-de-Logo-AZUL-01-(2).png"
+            src="https://i.postimg.cc/xjx4m8p5/Copia-de-logo-cor-original.png"
             alt="Doutor Digital"
             className="h-full w-full object-cover object-center"
           />
