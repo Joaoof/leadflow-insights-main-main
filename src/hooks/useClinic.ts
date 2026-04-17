@@ -1,25 +1,20 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { toNumberOrUndef } from "@/api/params";
 
 interface ClinicStore {
-  clinicId: number | null;
-  /** Normaliza qualquer valor recebido (string/number/vazio) para number|null. */
-  setClinicId: (id: number | string | null | undefined) => void;
-}
+  tenantId: number | null;
+  unitId: number | null;
 
-function envClinic(): number | null {
-  const raw = import.meta.env.VITE_DEFAULT_CLINIC_ID;
-  const n = toNumberOrUndef(raw);
-  return n ?? null;
+  setContext: (tenantId: number, unitId: number) => void;
 }
 
 export const useClinic = create<ClinicStore>()(
   persist(
     (set) => ({
-      clinicId: envClinic(),
-      setClinicId: (id) => set({ clinicId: toNumberOrUndef(id) ?? null }),
+      tenantId: null,
+      unitId: null,
+      setContext: (tenantId, unitId) => set({ tenantId, unitId }),
     }),
-    { name: "leadflow.clinic" }
+    { name: "doutor.digital.clinic" }
   )
 );

@@ -11,19 +11,19 @@ import { webhooksService } from "@/services/webhooks";
 import { formatNumber, formatPercent } from "@/lib/utils";
 
 export default function SourcesPage() {
-  const { clinicId } = useClinic();
+  const { unitId } = useClinic();
 
   const origem = useQuery({
-    queryKey: ["sources-origem", clinicId],
-    queryFn: () => webhooksService.origemCloudia(clinicId || undefined),
+    queryKey: ["sources-origem", unitId],
+    queryFn: () => webhooksService.origemCloudia(unitId || undefined),
   });
   const source = useQuery({
-    queryKey: ["sources-final", clinicId],
-    queryFn: () => webhooksService.sourceFinal(clinicId || undefined),
+    queryKey: ["sources-final", unitId],
+    queryFn: () => webhooksService.sourceFinal(unitId || undefined),
   });
   const leads = useQuery({
-    queryKey: ["sources-leads", clinicId],
-    queryFn: () => webhooksService.listLeads({ clinicId: clinicId || undefined }),
+    queryKey: ["sources-leads", unitId],
+    queryFn: () => webhooksService.listLeads({ clinicId: unitId || undefined }),
   });
 
   const converted = useMemo(() => {

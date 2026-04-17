@@ -51,49 +51,55 @@ function last6MonthsRange() {
 }
 
 export default function DashboardPage() {
-  const { clinicId } = useClinic();
+  const { tenantId, unitId } = useClinic();
   const range = last6MonthsRange();
 
   const states = useQuery({
-    queryKey: ["count-by-state", clinicId],
-    queryFn: () => webhooksService.countByState(clinicId || undefined),
+    queryKey: ["count-by-state", unitId],
+    queryFn: () => webhooksService.countByState(unitId || undefined),
   });
   const consultas = useQuery({
-    queryKey: ["consultas", clinicId],
-    queryFn: () => webhooksService.consultas(clinicId || undefined),
+    queryKey: ["consultas", unitId],
+    queryFn: () => webhooksService.consultas(unitId || undefined),
   });
   const comPag = useQuery({
-    queryKey: ["com-pagamento", clinicId],
-    queryFn: () => webhooksService.comPagamento(clinicId || undefined),
+    queryKey: ["com-pagamento", unitId],
+    queryFn: () => webhooksService.comPagamento(unitId || undefined),
   });
   const semPag = useQuery({
-    queryKey: ["sem-pagamento", clinicId],
-    queryFn: () => webhooksService.semPagamento(clinicId || undefined),
+    queryKey: ["sem-pagamento", unitId],
+    queryFn: () => webhooksService.semPagamento(unitId || undefined),
   });
   const etapa = useQuery({
-    queryKey: ["etapa-agrupada", clinicId],
-    queryFn: () => webhooksService.etapaAgrupada(clinicId || undefined),
+    queryKey: ["etapa-agrupada", unitId],
+    queryFn: () => webhooksService.etapaAgrupada(unitId || undefined),
   });
   const origem = useQuery({
-    queryKey: ["origem-cloudia", clinicId],
-    queryFn: () => webhooksService.origemCloudia(clinicId || undefined),
+    queryKey: ["origem-cloudia", unitId],
+    queryFn: () => webhooksService.origemCloudia(unitId || undefined),
   });
   const evolucao = useQuery({
-    queryKey: ["evolucao", clinicId, range.dataInicio, range.dataFim],
+    queryKey: ["evolucao", unitId, range.dataInicio, range.dataFim],
     queryFn: () =>
-      webhooksService.buscarInicioFim({ clinicId: clinicId || undefined, ...range }),
+      webhooksService.buscarInicioFim({ clinicId: unitId || undefined, ...range }),
   });
   const resumoLive = useQuery({
-    queryKey: ["live-resumo", clinicId],
-    queryFn: () => metricsService.resumo(clinicId || undefined),
+    queryKey: ["live-resumo", unitId],
+    queryFn: () => metricsService.resumo(unitId || undefined),
     refetchInterval: 30_000,
   });
   const ativos = useQuery({
-    queryKey: ["active", clinicId],
-    queryFn: () => webhooksService.activeLeads({ limit: 10, unitId: clinicId || undefined }),
+    queryKey: ["active", unitId],
+    queryFn: () => webhooksService.activeLeads({ limit: 10, unitId: unitId || undefined }),
   });
 
-  const total = states.data?.total ?? 0;
+  const totalLeadQuery = useQuery({
+  queryKey: ["/webhooks/total-leads", tenantId],
+  queryFn: () => webhooksService.getTotalLeads(tenantId ?? 0),
+  enabled: tenantId !== null,
+});
+
+  const total = totalLeadQuery.data ?? 0;
   const conversao = total > 0 ? ((consultas.data ?? 0) / total) * 100 : 0;
   const pagamentoRate = total > 0 ? ((comPag.data ?? 0) / total) * 100 : 0;
 
@@ -104,28 +110,38 @@ export default function DashboardPage() {
 
   return (
     <>
-      <PageHeader
-        title="Visão geral"
-        description={
-          clinicId
-            ? `Performance consolidada · clinicId: ${clinicId}`
-            : "Performance consolidada — selecione um Clinic ID na topbar para filtrar."
-        }
-        actions={
-          <>
-            <Link to="/live">
-              <Button variant="outline" size="sm">
-                <Radio className="h-4 w-4" /> Ao vivo
-              </Button>
-            </Link>
-            <Link to="/reports">
-              <Button size="sm">
-                <CalendarCheck className="h-4 w-4" /> Gerar relatório
-              </Button>
-            </Link>
-          </>
-        }
-      />
+        <PageHeader
+    title="Visão geral"
+    description={
+      unitId
+        ? `Performance consolidada · unitId: ${unitId}`
+        : "Performance consolidada — selecione um Unit ID na topbar para filtrar."
+    }
+    actions={
+      <>
+        <Link to="/live">
+          <Button
+            variant="outline"
+            size="sm"
+            className="relative border-red-500/60 bg-red-500/10 text-red-400 hover:border-red-400 hover:bg-red-500/20 hover:text-red-300"
+          >
+            {/* Ping de "ao vivo" */}
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
+            </span>
+            Ao vivo
+          </Button>
+        </Link>
+
+        <Link to="/reports">
+          <Button size="sm">
+            <CalendarCheck className="h-4 w-4" /> Gerar relatório
+          </Button>
+        </Link>
+      </>
+    }
+  />
 
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
         <KpiCard

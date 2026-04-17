@@ -1,3 +1,4 @@
+import { useClinic } from "@/hooks/useClinic";
 import { api } from "@/lib/api";
 import { toInt } from "@/lib/http";
 
@@ -14,11 +15,12 @@ export interface DailyReportParams {
 
 export const reportsService = {
   async monthly(params: MonthlyReportParams): Promise<void> {
-    const clinicId = toInt(params.clinicId);
-    if (!clinicId) throw new Error("clinicId inválido para /api/relatorios/mensal");
+    const unitId = useClinic((s) => s.unitId);
+    console.log("CLINIC ID:", unitId);
+    if (!unitId) throw new Error("clinicId inválido para /api/relatorios/mensal");
 
     const res = await api.get<Blob>("/api/relatorios/mensal", {
-      params: { clinicId, mes: params.mes, ano: params.ano },
+      params: { clinicId: unitId, mes: params.mes, ano: params.ano },
       responseType: "blob",
     });
 

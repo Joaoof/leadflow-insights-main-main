@@ -28,6 +28,6 @@ export const useAuth = create<AuthStore>()(
         set({ user: null, token: null });
       },
     }),
-    { name: "leadflow.auth" }
+    { name: "doutor.digital.auth" }
   )
 );

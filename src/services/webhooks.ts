@@ -64,7 +64,7 @@ export const webhooksService = {
     const { data } = await api.get<Lead[]>("/webhooks", {
       params: cleanParams({
         ...filters,
-        clinicId: toInt(filters.clinicId),
+        unitId: toInt(filters.clinicId),
       }),
     });
 
@@ -168,9 +168,9 @@ export const webhooksService = {
     return asArray<ActiveLeadDto>(data);
   },
 
-  async countByState(unitId?: number | string): Promise<LeadsCountDto> {
+  async countByState(unitId?: number | string, tenantId?: number | string): Promise<LeadsCountDto> {
     const { data } = await api.get<LeadsCountDto>("/webhooks/count-by-state", {
-      params: cleanParams({ unitId: toInt(unitId) }),
+      params: cleanParams({ unitId: toInt(unitId), tenantId: toInt(tenantId) }),
     });
 
     return data ?? { bot: 0, queue: 0, service: 0, concluido: 0, total: 0 };
@@ -180,4 +180,12 @@ export const webhooksService = {
     const { data } = await api.get<unknown>("/webhooks/sync/health");
     return data;
   },
+
+  async getTotalLeads(tenantId: number): Promise<number> {
+  const { data } = await api.get<{ total: number }>("/webhooks/total-leads", {
+    params: { clinicId: tenantId },
+  });
+
+  return data.total;
+  }
 };

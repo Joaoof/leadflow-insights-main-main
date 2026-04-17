@@ -23,7 +23,7 @@ import { useClinic } from "@/hooks/useClinic";
 
 export default function LeadDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { clinicId } = useClinic();
+  const { tenantId, unitId } = useClinic();
 
   const metrics = useQuery({
     queryKey: ["lead-metrics", id],
@@ -32,8 +32,8 @@ export default function LeadDetailPage() {
   });
 
   const history = useQuery({
-    queryKey: ["lead-history", id, clinicId],
-    queryFn: () => assignmentsService.leadHistory(id!, clinicId || undefined),
+    queryKey: ["lead-history", id, unitId],
+    queryFn: () => assignmentsService.leadHistory(id!, unitId || undefined),
     enabled: !!id,
   });
 

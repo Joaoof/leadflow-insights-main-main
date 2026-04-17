@@ -18,7 +18,7 @@ import { formatDate, formatNumber } from "@/lib/utils";
 const PAGE_SIZE = 25;
 
 export default function LeadsPage() {
-  const { clinicId } = useClinic();
+  const { tenantId, unitId } = useClinic();
   const { values, setFilter, reset } = useFilters({
     search: "",
     state: "",
@@ -28,8 +28,8 @@ export default function LeadsPage() {
   });
 
   const query = useQuery({
-    queryKey: ["leads", clinicId],
-    queryFn: () => webhooksService.listLeads({ clinicId: clinicId || undefined }),
+    queryKey: ["leads", tenantId, unitId],
+    queryFn: () => webhooksService.listLeads({ clinicId: unitId || tenantId || undefined }),
   });
 
   const filtered = useMemo(() => {

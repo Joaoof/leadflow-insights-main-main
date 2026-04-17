@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 interface UnitOption {
   id: string | number;
-  clinicId: number | string;
+  clinicId: number;
   name: string;
   logo: string;
 }
@@ -16,22 +16,22 @@ interface UnitOption {
 const fallbackUnits: UnitOption[] = [
   {
     id: "araguaina",
-    clinicId: "8020",
+    clinicId: 8020,
     name: "Doutor Hérnia Unidade Araguaína",
     logo: "https://i0.wp.com/www.cloudia.com.br/wp-content/uploads/2024/01/Logo-800-sem-fundo.png",
   },
-  { id: "maraba", clinicId: "8021", name: "DOUTOR HÉRNIA UNIDADE MARABÁ", logo: "/assets/logo-maraba.png" },
-  { id: "parauapebas", clinicId: "8022", name: "DOUTOR HÉRNIA UNIDADE PARAUAPEBAS", logo: "/assets/logo-parauapebas.png" },
-  { id: "imperatriz", clinicId: "8023", name: "DOUTOR HÉRNIA IMPERATRIZ", logo: "/assets/logo-10anos.png" },
-  { id: "canaa", clinicId: "8024", name: "DOUTOR HÉRNIA CANAÃ", logo: "/assets/logo-10anos.png" },
-  { id: "balsas", clinicId: "8025", name: "DOUTOR HÉRNIA BALSAS", logo: "/assets/logo-10anos.png" },
-  { id: "trauma", clinicId: "8026", name: "INSTITUTO TRAUMA", logo: "/assets/logo-trauma.png" },
+  { id: "maraba", clinicId: 8021, name: "DOUTOR HÉRNIA UNIDADE MARABÁ", logo: "/assets/logo-maraba.png" },
+  { id: "parauapebas", clinicId: 8022, name: "DOUTOR HÉRNIA UNIDADE PARAUAPEBAS", logo: "/assets/logo-parauapebas.png" },
+  { id: "imperatriz", clinicId: 8023, name: "DOUTOR HÉRNIA IMPERATRIZ", logo: "/assets/logo-10anos.png" },
+  { id: "canaa", clinicId: 8024, name: "DOUTOR HÉRNIA CANAÃ", logo: "/assets/logo-10anos.png" },
+  { id: "balsas", clinicId: 8025, name: "DOUTOR HÉRNIA BALSAS", logo: "/assets/logo-10anos.png" },
+  { id: "trauma", clinicId: 8026, name: "INSTITUTO TRAUMA", logo: "/assets/logo-trauma.png" },
 ];
 
 export default function UnitSelectPage() {
   const navigate = useNavigate();
   const { logout } = useAuth();
-  const { setClinicId } = useClinic();
+  const { setContext } = useClinic();
   const [search, setSearch] = useState("");
 
   const units = useQuery({
@@ -41,26 +41,31 @@ export default function UnitSelectPage() {
   });
 
   const options = useMemo<UnitOption[]>(() => {
-    const fromApi: UnitOption[] = (units.data ?? []).map((unit) => {
-      const fallbackMatch = fallbackUnits.find(
-        (f) => String(f.clinicId) === String(unit.clinicId)
-      );
+  const fromApi = (units.data ?? [])
+    .map((unit): UnitOption | null => {
+      const clinicId =
+        typeof unit.clinicId === "number" ? unit.clinicId : Number(unit.clinicId);
+
+      if (Number.isNaN(clinicId)) return null;
+
+      const fallbackMatch = fallbackUnits.find((f) => f.clinicId === clinicId);
+
       return {
         id: unit.id,
-        clinicId: unit.clinicId,
-        name: unit.name?.trim() || `Unidade ${unit.clinicId}`,
+        clinicId,
+        name: unit.name?.trim() || `Unidade ${clinicId}`,
         logo: unit.logo_url || fallbackMatch?.logo || "/assets/default-logo.png",
       };
-    });
+    })
+    .filter((item): item is UnitOption => item !== null);
 
-    const combined = fromApi.length ? fromApi : fallbackUnits;
+  const combined = fromApi.length ? fromApi : fallbackUnits;
 
-    return combined.filter((item) => {
-      const normalized = `${item.name} ${item.clinicId}`.toLowerCase();
-      return normalized.includes(search.toLowerCase());
-    });
-  }, [search, units.data]);
-
+  return combined.filter((item) => {
+    const normalized = `${item.name} ${item.clinicId}`.toLowerCase();
+    return normalized.includes(search.toLowerCase());
+  });
+}, [search, units.data]);
   return (
     <div className="relative min-h-screen w-full bg-[#f6f7fb] py-4 sm:py-6">
       <div className="min-h-[calc(100vh-2rem)] w-full border-y border-slate-200 bg-white px-4 py-8 shadow-sm sm:px-10 sm:py-10 lg:px-16 lg:py-12 xl:border-x xl:rounded-[32px]">
@@ -98,7 +103,7 @@ export default function UnitSelectPage() {
             <button
               key={unit.id}
               onClick={() => {
-                setClinicId(unit.clinicId);
+                setContext(unit.clinicId, Number(unit.id));
                 navigate("/");
               }}
               className="group flex flex-col items-center justify-start text-center transition-transform duration-200 hover:-translate-y-1"
