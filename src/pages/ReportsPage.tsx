@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { reportsService } from "@/services/reports";
 import { useClinic } from "@/hooks/useClinic";
 
-export function ReportsPage() {
+export default function ReportsPage() {
   const { clinicId } = useClinic();
   const today = new Date();
 

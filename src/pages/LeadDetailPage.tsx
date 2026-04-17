@@ -21,7 +21,7 @@ import { webhooksService } from "@/services/webhooks";
 import { formatDate, formatDuration } from "@/lib/utils";
 import { useClinic } from "@/hooks/useClinic";
 
-export function LeadDetailPage() {
+export default function LeadDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { clinicId } = useClinic();
 

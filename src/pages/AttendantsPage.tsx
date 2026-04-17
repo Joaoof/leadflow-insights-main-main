@@ -7,7 +7,7 @@ import { assignmentsService } from "@/services/assignments";
 import { useClinic } from "@/hooks/useClinic";
 import { formatNumber } from "@/lib/utils";
 
-export function AttendantsPage() {
+export default function AttendantsPage() {
   const { clinicId } = useClinic();
 
   const atts = useQuery({

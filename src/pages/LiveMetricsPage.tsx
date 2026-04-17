@@ -11,7 +11,7 @@ import { metricsService } from "@/services/metrics";
 import { useClinic } from "@/hooks/useClinic";
 import { formatDuration, formatNumber } from "@/lib/utils";
 
-export function LiveMetricsPage() {
+export default function LiveMetricsPage() {
   const { clinicId } = useClinic();
 
   const resumo = useQuery({

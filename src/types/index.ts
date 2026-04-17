@@ -147,6 +147,9 @@ export interface AttendantRanking {
 export interface Unit {
   id: number;
   clinicId: number;
+  logo_url: string | undefined;
+  id: string;
+  clinicId: string;
   name?: string | null;
   leadsCount?: number;
 }

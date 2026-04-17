@@ -17,7 +17,7 @@ import { formatDate, formatNumber } from "@/lib/utils";
 
 const PAGE_SIZE = 25;
 
-export function LeadsPage() {
+export default function LeadsPage() {
   const { clinicId } = useClinic();
   const { values, setFilter, reset } = useFilters({
     search: "",

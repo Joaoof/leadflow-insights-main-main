@@ -8,7 +8,7 @@ import { useClinic } from "@/hooks/useClinic";
 import { webhooksService } from "@/services/webhooks";
 import { formatPercent } from "@/lib/utils";
 
-export function FunnelPage() {
+export default function FunnelPage() {
   const { clinicId } = useClinic();
 
   const states = useQuery({

@@ -50,7 +50,7 @@ function last6MonthsRange() {
   };
 }
 
-export function DashboardPage() {
+export default function DashboardPage() {
   const { clinicId } = useClinic();
   const range = last6MonthsRange();
 

@@ -10,7 +10,7 @@ import { webhooksService } from "@/services/webhooks";
 import { useClinic } from "@/hooks/useClinic";
 import { formatNumber } from "@/lib/utils";
 
-export function EvolutionPage() {
+export default function EvolutionPage() {
   const { clinicId } = useClinic();
   const defaultRange = useMemo(() => {
     const end = new Date();

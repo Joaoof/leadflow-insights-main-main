@@ -13,9 +13,10 @@ import {
   setCloudiaBaseUrl,
   setCloudiaBearerToken,
 } from "@/lib/api";
+  setAdminKey} from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 
-export function SettingsPage() {
+export default function SettingsPage() {
   const qc = useQueryClient();
   const [adminKey, setAdmin] = useState(localStorage.getItem("admin_key") ?? "");
   const [apiKey, setApiKey] = useState("");
@@ -54,13 +55,6 @@ export function SettingsPage() {
     setAdminKey(adminKey || null);
     toast.success(adminKey ? "Admin key salva" : "Admin key removida");
   }
-
-  function saveCloudiaLocalConfig() {
-    setCloudiaBearerToken(cloudiaBearer || null);
-    setCloudiaBaseUrl(cloudiaUrl || null);
-    toast.success("Configuração local da Cloudia salva");
-  }
-
   return (
     <>
       <PageHeader
