@@ -1,6 +1,6 @@
 import axios, { AxiosError } from "axios";
 import type { ProblemDetails } from "@/types";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";

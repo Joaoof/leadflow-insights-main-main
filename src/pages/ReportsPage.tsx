@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FileDown, FileText } from "lucide-react";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";

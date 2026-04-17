@@ -1,20 +1,15 @@
+// src/pages/DashboardPage.tsx
+
 import { Suspense, lazy, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  AlertTriangle,
-  CalendarCheck,
-  CalendarX,
-  CreditCard,
-  DollarSign,
-  HeartHandshake,
-  Percent,
-  Radio,
-  Stethoscope,
-  TrendingUp,
-  UserPlus,
-  Users,
+  AlertTriangle, Bell, CalendarCheck, CalendarX,
+  CheckCircle2, CreditCard, DollarSign,
+  HeartHandshake, Percent, Sparkles,
+  Stethoscope, TrendingUp, UserPlus, Users,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { cn, formatNumber, formatPercent, truncate, formatDate } from "@/lib/utils";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { KpiCard } from "@/components/kpi/KpiCard";
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";
@@ -24,177 +19,262 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { webhooksService } from "@/services/webhooks";
 import { metricsService } from "@/services/metrics";
 import { useClinic } from "@/hooks/useClinic";
-import { formatNumber, formatPercent, truncate, formatDate } from "@/lib/utils";
-import { DashboardFilters, DashboardFiltersState, defaultFilters } from "@/components/filters/DashboardFilters";
+import {
+  DashboardFilters,
+  DashboardFiltersState,
+  defaultFilters,
+} from "@/components/filters/DashboardFilters";
+
+// ─── Lazy charts ──────────────────────────────────────────────────────────────
 
 const FunnelChart = lazy(() =>
-  import("@/components/charts/FunnelChart").then((module) => ({
-    default: module.FunnelChart,
-  }))
+  import("@/components/charts/FunnelChart").then((m) => ({ default: m.FunnelChart }))
 );
 const EvolutionLine = lazy(() =>
-  import("@/components/charts/EvolutionLine").then((module) => ({
-    default: module.EvolutionLine,
-  }))
+  import("@/components/charts/EvolutionLine").then((m) => ({ default: m.EvolutionLine }))
 );
 const SourceDonut = lazy(() =>
-  import("@/components/charts/SourceDonut").then((module) => ({
-    default: module.SourceDonut,
-  }))
+  import("@/components/charts/SourceDonut").then((m) => ({ default: m.SourceDonut }))
 );
 
+// ─── Mock temporário de usuário ───────────────────────────────────────────────
+// Substitua por useAuth() quando o backend estiver pronto
+
+const MOCK_USER = { name: "João Of", avatar: null as string | null };
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 function last6MonthsRange() {
-  const end = new Date();
+  const end   = new Date();
   const start = new Date();
   start.setMonth(start.getMonth() - 5);
   start.setDate(1);
   return {
     dataInicio: start.toISOString().slice(0, 10),
-    dataFim: end.toISOString().slice(0, 10),
+    dataFim:    end.toISOString().slice(0, 10),
   };
 }
 
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 12) return "Bom dia";
+  if (h < 18) return "Boa tarde";
+  return "Boa noite";
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default function DashboardPage() {
   const { tenantId, unitId } = useClinic();
-  const range = last6MonthsRange();
+  const range      = last6MonthsRange();
+  const firstName  = MOCK_USER.name.split(" ")[0];
+
+  const [filters, setFilters] = useState<DashboardFiltersState>(defaultFilters);
+
+  // ── Queries ──────────────────────────────────────────────────────────────────
 
   const states = useQuery({
     queryKey: ["count-by-state", unitId],
-    queryFn: () => webhooksService.countByState(unitId || undefined),
+    queryFn:  () => webhooksService.countByState(unitId || undefined),
   });
   const consultas = useQuery({
     queryKey: ["consultas", unitId],
-    queryFn: () => webhooksService.consultas(unitId || undefined),
+    queryFn:  () => webhooksService.consultas(unitId || undefined),
   });
   const comPag = useQuery({
     queryKey: ["com-pagamento", unitId],
-    queryFn: () => webhooksService.comPagamento(unitId || undefined),
+    queryFn:  () => webhooksService.comPagamento(unitId || undefined),
   });
   const semPag = useQuery({
     queryKey: ["sem-pagamento", unitId],
-    queryFn: () => webhooksService.semPagamento(unitId || undefined),
+    queryFn:  () => webhooksService.semPagamento(unitId || undefined),
   });
   const etapa = useQuery({
     queryKey: ["etapa-agrupada", unitId],
-    queryFn: () => webhooksService.etapaAgrupada(unitId || undefined),
+    queryFn:  () => webhooksService.etapaAgrupada(unitId || undefined),
   });
   const origem = useQuery({
     queryKey: ["origem-cloudia", unitId],
-    queryFn: () => webhooksService.origemCloudia(unitId || undefined),
+    queryFn:  () => webhooksService.origemCloudia(unitId || undefined),
   });
   const evolucao = useQuery({
     queryKey: ["evolucao", unitId, range.dataInicio, range.dataFim],
-    queryFn: () =>
+    queryFn:  () =>
       webhooksService.buscarInicioFim({ clinicId: unitId || undefined, ...range }),
   });
   const resumoLive = useQuery({
-    queryKey: ["live-resumo", unitId],
-    queryFn: () => metricsService.resumo(unitId || undefined),
+    queryKey:       ["live-resumo", unitId],
+    queryFn:        () => metricsService.resumo(unitId || undefined),
     refetchInterval: 30_000,
   });
   const ativos = useQuery({
     queryKey: ["active", unitId],
-    queryFn: () => webhooksService.activeLeads({ limit: 10, unitId: unitId || undefined }),
+    queryFn:  () => webhooksService.activeLeads({ limit: 10, unitId: unitId || undefined }),
   });
-
   const totalLeadQuery = useQuery({
-  queryKey: ["/webhooks/total-leads", tenantId],
-  queryFn: () => webhooksService.getTotalLeads(tenantId ?? 0),
-  enabled: tenantId !== null,
+    queryKey: ["/webhooks/total-leads", tenantId],
+    queryFn:  () => webhooksService.getTotalLeads(tenantId ?? 0),
+    enabled:  tenantId !== null,
   });
 
-  const [filters, setFilters] = useState<DashboardFiltersState>(defaultFilters);
+  // ── Derivados ─────────────────────────────────────────────────────────────────
 
-
-  const total = totalLeadQuery.data ?? 0;
-  const conversao = total > 0 ? ((consultas.data ?? 0) / total) * 100 : 0;
+  const total         = totalLeadQuery.data ?? 0;
+  const conversao     = total > 0 ? ((consultas.data ?? 0) / total) * 100 : 0;
   const pagamentoRate = total > 0 ? ((comPag.data ?? 0) / total) * 100 : 0;
-
-  const donutData = (origem.data ?? []).slice(0, 8).map((o) => ({
-    name: o.origem ?? "—",
+  const donutData     = (origem.data ?? []).slice(0, 8).map((o) => ({
+    name:  o.origem   ?? "—",
     value: o.quantidade ?? 0,
   }));
 
+  function handleSearch() {
+    states.refetch();
+    consultas.refetch();
+    comPag.refetch();
+    semPag.refetch();
+    evolucao.refetch();
+  }
+
+  // ── Render ───────────────────────────────────────────────────────────────────
+
   return (
     <>
-        <PageHeader
-    title="Visão geral"
-    description={
-      unitId
-        ? `Performance consolidada · unitId: ${unitId}`
-        : "Performance consolidada — selecione um Unit ID na topbar para filtrar."
-    }
-    backgroundImage="https://i.postimg.cc/vH3zxNPf/Gemini-Generated-Image-ksegwnksegwnkseg.png"
-      badge="Clínica"
-    actions={
-      <>
-        <Link to="/live">
-          <Button
-            variant="outline"
-            size="sm"
-            className="relative border-red-500/60 bg-red-500/10 text-red-400 hover:border-red-400 hover:bg-red-500/20 hover:text-red-300"
-          >
-            {/* Ping de "ao vivo" */}
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
-            </span>
-            Ao vivo
-          </Button>
-        </Link>
-
-        <Link to="/reports">
-          <Button size="sm">
-            <CalendarCheck className="h-4 w-4" /> Gerar relatório
-          </Button>
-        </Link>
-      </>
-    }
-  />
-
-      <div className="mb-10">
-      <DashboardFilters
-      value={filters}
-      onChange={setFilters}
-      onSearch={() => {
-        // React Query refetch automático pelas queryKeys — mas se quiser forçar:
-        states.refetch();
-        consultas.refetch();
-        comPag.refetch();
-        semPag.refetch();
-        evolucao.refetch();
-      }}
+      {/* ══ Header ══════════════════════════════════════════════ */}
+      <PageHeader
+        title="Visão geral"
+        badge="Clínica"
+        backgroundImage="https://i.postimg.cc/xCmQcHnL/Chat-GPT-Image-17-de-abr-de-2026-12-16-43.png"
+        description={
+          unitId
+            ? `Performance consolidada · unitId: ${unitId}`
+            : "Performance consolidada — selecione um Unit ID na topbar para filtrar."
+        }
+        actions={
+          <>
+            <Link to="/live">
+              <Button
+                variant="outline"
+                size="sm"
+                className="relative border-red-500/60 bg-red-500/10 text-red-400 hover:border-red-400 hover:bg-red-500/20 hover:text-red-300"
+              >
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
+                </span>
+                Ao vivo
+              </Button>
+            </Link>
+            <Link to="/reports">
+              <Button size="sm">
+                <CalendarCheck className="h-4 w-4" /> Gerar relatório
+              </Button>
+            </Link>
+          </>
+        }
       />
+
+      {/* ══ Boas-vindas ══════════════════════════════════════════ */}
+      <div
+        className={cn(
+          "relative mb-4 overflow-hidden rounded-2xl",
+          "border border-white/[0.07] bg-[rgba(255,255,255,0.02)]",
+          "shadow-[0_1px_3px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.04)]",
+          "px-6 py-5"
+        )}
+      >
+        {/* Orb decorativo */}
+        <div className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-brand-500/8 blur-3xl" />
+
+        <div className="relative flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+
+          {/* Avatar + saudação */}
+          <div className="flex items-center gap-3">
+            {MOCK_USER.avatar ? (
+              <img
+                src={MOCK_USER.avatar}
+                alt={firstName}
+                className="h-11 w-11 shrink-0 rounded-xl object-cover shadow-[0_0_14px_rgba(139,92,246,0.35)]"
+              />
+            ) : (
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-violet-600 text-[15px] font-black text-white shadow-[0_0_14px_rgba(139,92,246,0.35)]">
+                {firstName.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div>
+              <p className="text-[12px] text-slate-500">{greeting()},</p>
+              <p className="text-[18px] font-bold leading-tight text-slate-100">
+                {firstName} 👋
+              </p>
+              <p className="mt-0.5 text-[11px] text-slate-500">
+                {new Date().toLocaleDateString("pt-BR", {
+                  weekday: "long",
+                  day:     "2-digit",
+                  month:   "long",
+                })}
+              </p>
+            </div>
+          </div>
+
+          {/* Badges de atualização */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/8 px-3 py-2 text-[11px] font-semibold text-emerald-400">
+              <TrendingUp className="h-3.5 w-3.5 shrink-0" />
+              {totalLeadQuery.isLoading ? "…" : `${total} leads no total`}
+            </div>
+            <div className="flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-[11px] font-semibold text-amber-400">
+              <Bell className="h-3.5 w-3.5 shrink-0" />
+              {states.isLoading ? "…" : `${states.data?.queue ?? 0} na fila`}
+            </div>
+            <div className="flex items-center gap-2 rounded-xl border border-violet-500/20 bg-violet-500/8 px-3 py-2 text-[11px] font-semibold text-violet-400">
+              <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+              {states.isLoading ? "…" : `${states.data?.service ?? 0} em atendimento`}
+            </div>
+            <div className="flex items-center gap-2 rounded-xl border border-brand-500/20 bg-brand-500/8 px-3 py-2 text-[11px] font-semibold text-brand-400">
+              <Sparkles className="h-3.5 w-3.5 shrink-0" />
+              {consultas.isLoading || totalLeadQuery.isLoading
+                ? "…"
+                : `${formatPercent(conversao)} de conversão`}
+            </div>
+          </div>
+        </div>
       </div>
 
+      {/* ══ Filtros ══════════════════════════════════════════════ */}
+      <div className="mb-6">
+        <DashboardFilters
+          value={filters}
+          onChange={setFilters}
+          onSearch={handleSearch}
+        />
+      </div>
 
-    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
-      {/* ── Linha 1 ── */}
+      {/* ══ KPIs ════════════════════════════════════════════════ */}
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
       <KpiCard
         label="Total de leads"
         value={total}
-        icon={<Users className="h-5 w-5" />}
+        icon={<img src="https://cdn-icons-png.flaticon.com/512/7376/7376481.png" alt="leads" className="h-16 w-16 object-contain" />}
         tone="blue"
         loading={totalLeadQuery.isLoading}
       />
       <KpiCard
         label="Em atendimento"
         value={states.data?.service ?? 0}
-        icon={<HeartHandshake className="h-5 w-5" />}
+        icon={<img src="https://cdn-icons-png.flaticon.com/512/2706/2706962.png" alt="atendimento" className="h-16 w-16 object-contain" />}
         tone="violet"
         loading={states.isLoading}
       />
       <KpiCard
         label="Na fila"
         value={states.data?.queue ?? 0}
-        icon={<UserPlus className="h-5 w-5" />}
+        icon={<img src="https://cdn-icons-png.flaticon.com/512/5772/5772632.png" alt="fila" className="h-16 w-16 object-contain" />}
         tone="amber"
         loading={states.isLoading}
       />
       <KpiCard
         label="Taxa de conversão"
         value={formatPercent(conversao)}
-        icon={<Percent className="h-5 w-5" />}
+        icon={<img src="https://cdn-icons-png.freepik.com/512/5915/5915116.png" alt="conversão" className="h-16 w-16 object-contain" />}
         tone="blue"
         loading={consultas.isLoading || totalLeadQuery.isLoading}
         subtitle={`${formatPercent(pagamentoRate)} pagam na hora`}
@@ -202,16 +282,14 @@ export default function DashboardPage() {
       <KpiCard
         label="CAC"
         value="—"
-        icon={<DollarSign className="h-5 w-5" />}
+        icon={<img src="https://cdn-icons-png.flaticon.com/512/3146/3146459.png" alt="cac" className="h-16 w-16 object-contain" />}
         tone="amber"
         subtitle="Custo por aquisição"
       />
-
-      {/* ── Linha 2 ── */}
       <KpiCard
         label="Agend. c/ pagamento"
         value={comPag.data ?? 0}
-        icon={<CreditCard className="h-5 w-5" />}
+        icon={<img src="https://cdn-icons-png.flaticon.com/512/10251/10251304.png" alt="agendado com pagamento" className="h-16 w-16 object-contain" />}
         tone="green"
         loading={comPag.isLoading}
         subtitle="Agendados e pagos"
@@ -219,7 +297,7 @@ export default function DashboardPage() {
       <KpiCard
         label="Agend. s/ pagamento"
         value={semPag.data ?? 0}
-        icon={<CalendarX className="h-5 w-5" />}
+        icon={<img src="https://cdn-icons-png.flaticon.com/512/9955/9955052.png" alt="agendado sem pagamento" className="h-16 w-16 object-contain" />}
         tone="red"
         loading={semPag.isLoading}
         subtitle="Agendados sem pagar"
@@ -227,7 +305,7 @@ export default function DashboardPage() {
       <KpiCard
         label="Em tratamento"
         value={consultas.data ?? 0}
-        icon={<Stethoscope className="h-5 w-5" />}
+        icon={<img src="https://cdn-icons-png.flaticon.com/512/5945/5945068.png" alt="em tratamento" className="h-16 w-16 object-contain" />}
         tone="green"
         loading={consultas.isLoading}
         subtitle="Fechou / tratando"
@@ -235,7 +313,7 @@ export default function DashboardPage() {
       <KpiCard
         label="Fecharam"
         value={consultas.data ?? 0}
-        icon={<TrendingUp className="h-5 w-5" />}
+        icon={<img src="https://cdn-icons-png.flaticon.com/512/5015/5015811.png" alt="fecharam" className="h-16 w-16 object-contain" />}
         tone="violet"
         loading={consultas.isLoading}
         subtitle="Convertidos total"
@@ -243,39 +321,25 @@ export default function DashboardPage() {
       <KpiCard
         label="S/ pagamento %"
         value={total > 0 ? formatPercent(((semPag.data ?? 0) / total) * 100) : "—"}
-        icon={<AlertTriangle className="h-5 w-5" />}
+        icon={<img src="https://cdn-icons-png.flaticon.com/512/4441/4441817.png" alt="sem pagamento %" className="h-16 w-16 object-contain" />}
         tone="amber"
         loading={semPag.isLoading || totalLeadQuery.isLoading}
         subtitle="Taxa sem pagamento"
       />
-    </div>
+     </div>
 
+      {/* ══ Funil + Origens ══════════════════════════════════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-6">
         <Card className="lg:col-span-2">
-          <CardHeader
-            title="Funil de conversão"
-            subtitle="Da entrada do lead até o tratamento em andamento"
-          />
+          <CardHeader title="Funil de conversão" subtitle="Da entrada do lead até o tratamento em andamento" />
           <CardBody>
             <Suspense fallback={<div className="skeleton h-60 w-full rounded-lg" />}>
               <FunnelChart
                 stages={[
-                  { label: "Total de leads", count: total, tone: "blue" },
-                  {
-                    label: "Agendados sem pagamento",
-                    count: semPag.data ?? 0,
-                    tone: "amber",
-                  },
-                  {
-                    label: "Agendados com pagamento",
-                    count: comPag.data ?? 0,
-                    tone: "violet",
-                  },
-                  {
-                    label: "Fechou / em tratamento",
-                    count: consultas.data ?? 0,
-                    tone: "emerald",
-                  },
+                  { label: "Total de leads",           count: total,               tone: "blue"    },
+                  { label: "Agendados sem pagamento",   count: semPag.data ?? 0,    tone: "amber"   },
+                  { label: "Agendados com pagamento",   count: comPag.data ?? 0,    tone: "violet"  },
+                  { label: "Fechou / em tratamento",    count: consultas.data ?? 0, tone: "emerald" },
                 ]}
               />
             </Suspense>
@@ -286,11 +350,7 @@ export default function DashboardPage() {
           <CardHeader
             title="Origem dos leads"
             subtitle="Top canais de aquisição"
-            action={
-              <Link to="/sources">
-                <Button variant="ghost" size="sm">Ver tudo</Button>
-              </Link>
-            }
+            action={<Link to="/sources"><Button variant="ghost" size="sm">Ver tudo</Button></Link>}
           />
           <CardBody>
             {origem.isLoading ? (
@@ -306,16 +366,13 @@ export default function DashboardPage() {
         </Card>
       </div>
 
+      {/* ══ Evolução + Ao vivo ═══════════════════════════════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
         <Card className="lg:col-span-2">
           <CardHeader
             title="Evolução temporal"
             subtitle="Leads captados nos últimos 6 meses"
-            action={
-              <Link to="/evolution">
-                <Button variant="ghost" size="sm">Ver detalhes</Button>
-              </Link>
-            }
+            action={<Link to="/evolution"><Button variant="ghost" size="sm">Ver detalhes</Button></Link>}
           />
           <CardBody>
             {evolucao.isLoading ? (
@@ -335,15 +392,13 @@ export default function DashboardPage() {
           <CardBody className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <MiniStat label="Em atendimento" value={resumoLive.data?.totalEmAtendimento ?? 0} />
-              <MiniStat label="Na fila" value={resumoLive.data?.totalNaFila ?? 0} />
+              <MiniStat label="Na fila"        value={resumoLive.data?.totalNaFila        ?? 0} />
             </div>
             <MiniStat
               label="Tempo médio de fila"
-              value={
-                resumoLive.data?.tempoMedio
-                  ? `${Math.round(resumoLive.data.tempoMedio)} min`
-                  : "—"
-              }
+              value={resumoLive.data?.tempoMedio
+                ? `${Math.round(resumoLive.data.tempoMedio)} min`
+                : "—"}
             />
             <Link to="/live" className="block pt-2">
               <Button variant="outline" className="w-full justify-center" size="sm">
@@ -354,16 +409,13 @@ export default function DashboardPage() {
         </Card>
       </div>
 
+      {/* ══ Leads ativos + Etapas ════════════════════════════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
         <Card>
           <CardHeader
             title="Leads ativos agora"
             subtitle="Últimos leads em andamento"
-            action={
-              <Link to="/leads">
-                <Button variant="ghost" size="sm">Ver todos</Button>
-              </Link>
-            }
+            action={<Link to="/leads"><Button variant="ghost" size="sm">Ver todos</Button></Link>}
           />
           <CardBody className="p-0">
             <div className="divide-y divide-white/5">
@@ -408,11 +460,7 @@ export default function DashboardPage() {
           <CardHeader
             title="Distribuição por etapa"
             subtitle="Momento atual dos leads"
-            action={
-              <Link to="/funnel">
-                <Button variant="ghost" size="sm">Analisar</Button>
-              </Link>
-            }
+            action={<Link to="/funnel"><Button variant="ghost" size="sm">Analisar</Button></Link>}
           />
           <CardBody>
             {etapa.isLoading ? (
@@ -458,6 +506,8 @@ export default function DashboardPage() {
     </>
   );
 }
+
+// ─── MiniStat ─────────────────────────────────────────────────────────────────
 
 function MiniStat({ label, value }: { label: string; value: string | number }) {
   return (

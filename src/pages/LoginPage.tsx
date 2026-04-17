@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useAuth } from "@/hooks/useAuth";
 import { useClinic } from "@/hooks/useClinic";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { authService } from "@/services/auth";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -17,24 +18,44 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: FormEvent) {
-    e.preventDefault();
-    if (!email || !password) return;
-    setLoading(true);
-    // Backend ainda não tem /auth/login — login local enquanto autenticação JWT não sobe.
-    await new Promise((r) => setTimeout(r, 500));
+  e.preventDefault();
+
+  if (!email || !password) return;
+
+  setLoading(true);
+
+  try {
+    const data = await authService.login({
+      email,
+      password,
+    });
+
+    // 🔐 salva sessão
     login(
       {
-        name: email.split("@")[0],
-        email,
-        role: "admin",
+        name: data.userName,
+        email: data.email,
+        role: data.role,
       },
-      "local-session"
+      data.accessToken
     );
-    setContext(8020, 8020);
-    toast.success("Bem-vindo! Selecione sua unidade.");
+
+    // 🏥 seta unidade correta
+    setContext(
+      data.selectedUnit.clinicId,
+      data.selectedUnit.id
+    );
+
+    toast.success("Login realizado com sucesso!");
+
     navigate("/select-unit");
+
+  } catch (err: any) {
+    toast.error("Email ou senha inválidos");
+  } finally {
     setLoading(false);
   }
+}
 
 return (
   <div className="min-h-screen grid lg:grid-cols-2 bg-white">
