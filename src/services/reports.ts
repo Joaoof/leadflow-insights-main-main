@@ -1,24 +1,23 @@
-import { api } from "@/lib/api";
+/**
+ * Compat shim — mantém a API antiga usada por páginas existentes
+ * (ReportsPage, DashboardPage). Internamente delega ao service oficial
+ * `relatoriosService`, que segue estritamente o contrato OpenAPI.
+ */
+
+import {
+  relatoriosService,
+  downloadBlob,
+  type MonthlyReportBlob,
+} from "@/services/relatorios";
+import type { DailyReportParams, MonthlyReportParams } from "@/api/types";
 
 export const reportsService = {
-  async monthly(params: { clinicId: string; mes: number; ano: number }) {
-    const res = await api.get("/api/relatorios/mensal", {
-      params,
-      responseType: "blob",
-    });
-    const blob = new Blob([res.data], { type: "application/pdf" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `relatorio-${params.ano}-${String(params.mes).padStart(2, "0")}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  async monthly(params: MonthlyReportParams): Promise<MonthlyReportBlob> {
+    const result = await relatoriosService.downloadMonthly(params);
+    downloadBlob(result.blob, result.filename);
+    return result;
   },
-
-  async daily(params: { tenantId: string; date: string }) {
-    const { data } = await api.get("/daily-relatory/generate", { params });
-    return data;
+  daily(params: DailyReportParams): Promise<unknown> {
+    return relatoriosService.getDaily(params);
   },
 };

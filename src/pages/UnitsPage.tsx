@@ -19,7 +19,7 @@ export function UnitsPage() {
   });
 
   const [newClinicId, setNewClinicId] = useState("");
-  const [editing, setEditing] = useState<string | null>(null);
+  const [editing, setEditing] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
 
   const createMut = useMutation({
@@ -32,7 +32,7 @@ export function UnitsPage() {
   });
 
   const updateMut = useMutation({
-    mutationFn: (p: { clinicId: string; name: string }) =>
+    mutationFn: (p: { clinicId: number | string; name: string }) =>
       unitsService.updateName(p.clinicId, p.name),
     onSuccess: () => {
       toast.success("Nome atualizado");

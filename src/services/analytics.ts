@@ -1,43 +1,104 @@
+/**
+ * LeadAnalytics API — rotas /api/analytics/*.
+ *
+ * Path params são inteiros conforme OpenAPI:
+ *  - /api/analytics/leads/{id:int}/metrics
+ *  - /api/analytics/units/{unitId:int}/leads-metrics
+ *  - /api/analytics/units/{unitId:int}/summary
+ *  - /api/analytics/units/{unitId:int}/alerts
+ *  - /api/analytics/units/{unitId:int}/dashboard/today
+ *
+ * Datas (`startDate`, `endDate`) viajam como ISO date-time.
+ */
+
 import { api } from "@/lib/api";
-import type { Lead, LeadMetrics, UnitSummary } from "@/types";
+import {
+  normalizeLeadMetrics,
+  normalizeLeadMetricsList,
+  normalizeUnitDashboardToday,
+  normalizeUnitSummary,
+} from "@/adapters/normalize";
+import { cleanParams, toIsoDateTime, toNumberOrUndef } from "@/api/params";
+import type {
+  LeadMetricsDto,
+  UnitDashboardTodayDto,
+  UnitLeadsMetricsParams,
+  UnitSummaryDto,
+  UnitSummaryParams,
+} from "@/api/types";
 
 export const analyticsService = {
-  async leadMetrics(leadId: string): Promise<LeadMetrics> {
-    const { data } = await api.get<LeadMetrics>(`/api/analytics/leads/${leadId}/metrics`);
-    return data;
+  async getLeadMetrics(id: number): Promise<LeadMetricsDto> {
+    const { data } = await api.get<unknown>(
+      `/api/analytics/leads/${id}/metrics`
+    );
+    return normalizeLeadMetrics(data);
   },
-  async unitLeadsMetrics(
-    unitId: string,
-    params: { startDate?: string; endDate?: string; state?: string } = {}
-  ): Promise<LeadMetrics[]> {
-    const { data } = await api.get<LeadMetrics[]>(
+
+  async getUnitLeadsMetrics(
+    unitId: number,
+    params: UnitLeadsMetricsParams = {}
+  ): Promise<LeadMetricsDto[]> {
+    const { data } = await api.get<unknown>(
       `/api/analytics/units/${unitId}/leads-metrics`,
-      { params }
+      {
+        params: cleanParams({
+          startDate: toIsoDateTime(params.startDate),
+          endDate: toIsoDateTime(params.endDate),
+          state: params.state,
+        }),
+      }
     );
-    return Array.isArray(data) ? data : [];
+    return normalizeLeadMetricsList(data);
   },
-  async unitSummary(
-    unitId: string,
-    params: { startDate?: string; endDate?: string } = {}
-  ): Promise<UnitSummary> {
-    const { data } = await api.get<UnitSummary>(
+
+  async getUnitSummary(
+    unitId: number,
+    params: UnitSummaryParams = {}
+  ): Promise<UnitSummaryDto> {
+    const { data } = await api.get<unknown>(
       `/api/analytics/units/${unitId}/summary`,
-      { params }
+      {
+        params: cleanParams({
+          startDate: toIsoDateTime(params.startDate),
+          endDate: toIsoDateTime(params.endDate),
+        }),
+      }
     );
-    return data;
+    return normalizeUnitSummary(data);
   },
-  async unitAlerts(unitId: string): Promise<LeadMetrics[]> {
-    const { data } = await api.get<LeadMetrics[]>(
+
+  async getUnitAlerts(unitId: number): Promise<LeadMetricsDto[]> {
+    const { data } = await api.get<unknown>(
       `/api/analytics/units/${unitId}/alerts`
     );
-    return Array.isArray(data) ? data : [];
+    return normalizeLeadMetricsList(data);
   },
-  async unitDashboardToday(unitId: string): Promise<{
-    summary: UnitSummary;
-    alerts: LeadMetrics[];
-    topAttendants: Array<{ name: string; conversions: number; total: number }>;
-  }> {
-    const { data } = await api.get(`/api/analytics/units/${unitId}/dashboard/today`);
-    return data;
+
+  async getUnitDashboardToday(unitId: number): Promise<UnitDashboardTodayDto> {
+    const { data } = await api.get<unknown>(
+      `/api/analytics/units/${unitId}/dashboard/today`
+    );
+    return normalizeUnitDashboardToday(data);
+  },
+
+  // ── Compat aliases — aceitam string|number para IDs ────────────────
+  leadMetrics(id: number | string): Promise<LeadMetricsDto> {
+    return this.getLeadMetrics(toNumberOrUndef(id) ?? 0);
+  },
+  unitLeadsMetrics(
+    unitId: number | string,
+    params: UnitLeadsMetricsParams = {}
+  ): Promise<LeadMetricsDto[]> {
+    return this.getUnitLeadsMetrics(toNumberOrUndef(unitId) ?? 0, params);
+  },
+  unitSummary(
+    unitId: number | string,
+    params: UnitSummaryParams = {}
+  ): Promise<UnitSummaryDto> {
+    return this.getUnitSummary(toNumberOrUndef(unitId) ?? 0, params);
+  },
+  unitAlerts(unitId: number | string): Promise<LeadMetricsDto[]> {
+    return this.getUnitAlerts(toNumberOrUndef(unitId) ?? 0);
   },
 };

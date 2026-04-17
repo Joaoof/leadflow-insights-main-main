@@ -1,27 +1,58 @@
+/**
+ * Metrics API — proxy para dados ao vivo da Cloudia.
+ *
+ * OpenAPI:
+ *  - /metrics/dashboard?clinicId=<int>&attendantType=<str, default "HUMAN">
+ *  - /metrics/resumo?clinicId=<int>
+ *  - /metrics/fila?clinicId=<int>
+ *  - /metrics/completo?clinicId=<int>
+ */
+
 import { api } from "@/lib/api";
-import type { LiveMetrics } from "@/types";
+import { normalizeLiveMetrics } from "@/adapters/normalize";
+import { cleanParams, toNumberOrUndef } from "@/api/params";
+import type { LiveMetricsDto, MetricsDashboardParams } from "@/api/types";
 
 export const metricsService = {
-  async dashboard(params: { clinicId?: string; attendantType?: string }): Promise<LiveMetrics> {
-    const { data } = await api.get<LiveMetrics>("/metrics/dashboard", { params });
-    return data ?? {};
-  },
-  async resumo(clinicId?: string): Promise<LiveMetrics> {
-    const { data } = await api.get<LiveMetrics>("/metrics/resumo", {
-      params: { clinicId },
+  async getDashboard(params: MetricsDashboardParams): Promise<LiveMetricsDto> {
+    const { data } = await api.get<unknown>("/metrics/dashboard", {
+      params: cleanParams({
+        clinicId: params.clinicId,
+        attendantType: params.attendantType ?? "HUMAN",
+      }),
     });
-    return data ?? {};
+    return normalizeLiveMetrics(data);
   },
-  async fila(clinicId?: string): Promise<LiveMetrics> {
-    const { data } = await api.get<LiveMetrics>("/metrics/fila", {
-      params: { clinicId },
+
+  async getResumo(clinicId?: number): Promise<LiveMetricsDto> {
+    const { data } = await api.get<unknown>("/metrics/resumo", {
+      params: cleanParams({ clinicId }),
     });
-    return data ?? {};
+    return normalizeLiveMetrics(data);
   },
-  async completo(clinicId?: string): Promise<LiveMetrics> {
-    const { data } = await api.get<LiveMetrics>("/metrics/completo", {
-      params: { clinicId },
+
+  async getFila(clinicId?: number): Promise<LiveMetricsDto> {
+    const { data } = await api.get<unknown>("/metrics/fila", {
+      params: cleanParams({ clinicId }),
     });
-    return data ?? {};
+    return normalizeLiveMetrics(data);
+  },
+
+  async getCompleto(clinicId?: number): Promise<LiveMetricsDto> {
+    const { data } = await api.get<unknown>("/metrics/completo", {
+      params: cleanParams({ clinicId }),
+    });
+    return normalizeLiveMetrics(data);
+  },
+
+  // ── Compat aliases ─────────────────────────────────────────────────
+  resumo(clinicId?: number | string | null): Promise<LiveMetricsDto> {
+    return this.getResumo(toNumberOrUndef(clinicId));
+  },
+  fila(clinicId?: number | string | null): Promise<LiveMetricsDto> {
+    return this.getFila(toNumberOrUndef(clinicId));
+  },
+  completo(clinicId?: number | string | null): Promise<LiveMetricsDto> {
+    return this.getCompleto(toNumberOrUndef(clinicId));
   },
 };

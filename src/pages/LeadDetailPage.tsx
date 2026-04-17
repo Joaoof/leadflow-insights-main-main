@@ -42,7 +42,10 @@ export function LeadDetailPage() {
     queryKey: ["lead-find", id],
     queryFn: async () => {
       const all = await webhooksService.listLeads();
-      return all.find((l) => l.id === id || l.externalId === id);
+      const idStr = String(id);
+      return all.find(
+        (l) => String(l.id) === idStr || String(l.externalId ?? "") === idStr
+      );
     },
     enabled: !!id,
   });
@@ -265,7 +268,7 @@ function TimeBlock({
   icon,
 }: {
   label: string;
-  value?: number;
+  value?: number | null;
   tone: "violet" | "amber" | "blue" | "emerald";
   icon: React.ReactNode;
 }) {

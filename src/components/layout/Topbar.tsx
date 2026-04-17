@@ -32,7 +32,7 @@ export function Topbar() {
         <Input
           className="w-44"
           placeholder="clinic-id"
-          value={clinicId}
+          value={clinicId ?? ""}
           onChange={(e) => setClinicId(e.target.value)}
         />
       </div>

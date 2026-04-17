@@ -1,16 +1,19 @@
-import { api } from "@/lib/api";
+/**
+ * Compat shim — mantém a API antiga (SettingsPage). Delega ao service
+ * oficial `configurationService`.
+ */
+
+import { configurationService } from "@/services/configuration";
+import type { CloudiaKeyStatusDto, SetApiKeyRequest } from "@/api/types";
 
 export const configService = {
-  async setCloudiaKey(payload: { apiKey: string; expiresAt?: string }) {
-    const { data } = await api.post("/api/config/cloudia-api-key", payload);
-    return data;
+  setCloudiaKey(payload: SetApiKeyRequest): Promise<void> {
+    return configurationService.setCloudiaKey(payload);
   },
-  async status(): Promise<{ configured: boolean; expiresAt?: string | null }> {
-    const { data } = await api.get("/api/config/cloudia-api-key/status");
-    return data;
+  status(): Promise<CloudiaKeyStatusDto> {
+    return configurationService.getCloudiaStatus();
   },
-  async remove() {
-    const { data } = await api.delete("/api/config/cloudia-api-key");
-    return data;
+  remove(): Promise<void> {
+    return configurationService.deleteCloudiaKey();
   },
 };
