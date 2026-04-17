@@ -1,8 +1,11 @@
 import { Suspense, lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useClinic } from "@/hooks/useClinic";
 import { LoginPage } from "@/pages/LoginPage";
 import { DashboardPage } from "@/pages/DashboardPage";
+import { UnitSelectPage } from "@/pages/UnitSelectPage";
+
 
 
 const DashboardLayout = lazy(() =>
@@ -104,14 +107,30 @@ function RequireAuth({ children }: { children: JSX.Element }) {
   return children;
 }
 
+function RequireClinic({ children }: { children: JSX.Element }) {
+  const { clinicId } = useClinic();
+  if (!clinicId) return <Navigate to="/select-unit" replace />;
+  return children;
+}
+
 export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route
+        path="/select-unit"
         element={
           <RequireAuth>
-            <DashboardLayout />
+            <UnitSelectPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        element={
+          <RequireAuth>
+            <RequireClinic>
+              <DashboardLayout />
+            </RequireClinic>
           </RequireAuth>
         }
       >
