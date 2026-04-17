@@ -1,8 +1,52 @@
+export type EntityId = number;
 export type ConversationState = "bot" | "queue" | "service" | "concluido";
 
+export interface ProblemDetails {
+  type?: string | null;
+  title?: string | null;
+  status?: number | null;
+  detail?: string | null;
+  instance?: string | null;
+  [key: string]: unknown;
+}
+
+/** Swagger: ActiveLeadDto */
+export interface ActiveLeadDto {
+  id: number;
+  externalId?: number;
+  name?: string | null;
+  phone?: string | null;
+  conversationState?: string | null;
+  attendantId?: number | null;
+  unitId?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+
+/** Swagger: LeadsCountDto */
+export interface LeadsCountDto {
+  bot: number;
+  queue: number;
+  service: number;
+  concluido: number;
+  total: number;
+}
+
+/** Swagger: SyncLeadDto */
+export interface SyncLeadDto {
+  externalId: number;
+  tags?: string[] | null;
+  name?: string | null;
+  phone?: string | null;
+  stage?: string | null;
+  tenantId: number;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
 export interface Lead {
-  id: string;
-  externalId?: string;
+  id: number;
+  externalId?: number;
   name?: string | null;
   phone?: string | null;
   email?: string | null;
@@ -10,15 +54,15 @@ export interface Lead {
   currentStage?: string | null;
   conversationState?: ConversationState | null;
   tags?: string[] | string | null;
-  clinicId?: string | null;
-  unitId?: string | null;
-  attendantId?: string | null;
+  clinicId?: number | null;
+  unitId?: number | null;
+  attendantId?: number | null;
   attendantName?: string | null;
   createdAt?: string;
   updatedAt?: string;
   firstAttendanceAt?: string | null;
   concludedAt?: string | null;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface StageCount {
@@ -37,13 +81,7 @@ export interface OrigemAgrupada {
   porcentagem?: number;
 }
 
-export interface StateCount {
-  bot: number;
-  queue: number;
-  service: number;
-  concluido: number;
-  total: number;
-}
+export interface StateCount extends LeadsCountDto {}
 
 export interface TimeSeriesPoint {
   periodo: string;
@@ -51,7 +89,7 @@ export interface TimeSeriesPoint {
 }
 
 export interface LeadMetrics {
-  leadId: string;
+  leadId: number;
   name?: string | null;
   currentState?: ConversationState;
   timeInBot?: number;
@@ -72,7 +110,7 @@ export interface LeadMetrics {
     content?: string;
     at: string;
   }>;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface UnitSummary {
@@ -88,11 +126,11 @@ export interface UnitSummary {
     conversions: number;
     total: number;
   }>;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface Attendant {
-  id: string;
+  id: number;
   name: string;
   email?: string | null;
   totalAssignments?: number;
@@ -100,13 +138,15 @@ export interface Attendant {
 }
 
 export interface AttendantRanking {
-  attendantId: string;
+  attendantId: number;
   name: string;
   total: number;
   conversions?: number;
 }
 
 export interface Unit {
+  id: number;
+  clinicId: number;
   logo_url: string | undefined;
   id: string;
   clinicId: string;
@@ -131,5 +171,11 @@ export interface LiveMetrics {
   totalEmAtendimento?: number;
   totalNaFila?: number;
   tempoMedio?: number;
-  [key: string]: any;
+  [key: string]: unknown;
+}
+
+export interface ApiCountPayload {
+  count?: number;
+  total?: number;
+  quantidade?: number;
 }

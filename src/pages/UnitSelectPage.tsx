@@ -1,5 +1,11 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Building2, LogOut, Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { unitsService } from "@/services/units";
+import { Card, CardBody, CardHeader } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
 import { LogOut, Search, MessageCircle, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { unitsService } from "@/services/units";
@@ -7,6 +13,18 @@ import { useClinic } from "@/hooks/useClinic";
 import { useAuth } from "@/hooks/useAuth";
 
 const fallbackUnits = [
+  { id: "araguaina", clinicId: "8020", name: "Doutor Hérnia Unidade Araguaína" },
+  { id: "maraba", clinicId: "8021", name: "Doutor Hérnia Unidade Marabá" },
+  { id: "parauapebas", clinicId: "8022", name: "Doutor Hérnia Unidade Parauapebas" },
+  { id: "imperatriz", clinicId: "8023", name: "Doutor Hérnia Imperatriz" },
+  { id: "canaa", clinicId: "8024", name: "Doutor Hérnia Canaã" },
+  { id: "balsas", clinicId: "8025", name: "Doutor Hérnia Balsas" },
+];
+
+export function UnitSelectPage() {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+  const { clinicId, setClinicId } = useClinic();
   { 
     id: "araguaina", 
     clinicId: "8020", 
@@ -34,6 +52,13 @@ export default function UnitSelectPage() {
   });
 
   const options = useMemo(() => {
+    const fromApi = (units.data ?? []).map((unit) => ({
+      id: unit.id,
+      clinicId: unit.clinicId,
+      name: unit.name?.trim() || `Unidade ${unit.clinicId}`,
+    }));
+
+    const combined = fromApi.length ? fromApi : fallbackUnits;
     const fromApi = (units.data ?? []).map((unit) => {
       const fallbackMatch = fallbackUnits.find((f) => f.clinicId === unit.clinicId);
 
@@ -54,6 +79,43 @@ export default function UnitSelectPage() {
   }, [search, units.data]);
 
   return (
+    <div className="min-h-screen bg-slate-100 p-4 md:p-8">
+      <div className="mx-auto max-w-6xl rounded-3xl bg-white shadow-xl border border-slate-200 p-6 md:p-10">
+        <div className="flex items-center justify-end">
+          <Button variant="ghost" onClick={logout}>
+            <LogOut className="h-4 w-4" /> Sair
+          </Button>
+        </div>
+
+        <div className="mt-4 text-center">
+          <h1 className="text-3xl font-semibold text-slate-800">Escolha uma unidade</h1>
+          <p className="text-sm text-slate-500 mt-2">
+            Selecione a unidade para puxar os dados corretos no painel.
+          </p>
+        </div>
+
+        <div className="mx-auto mt-6 max-w-md">
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            icon={<Search className="h-4 w-4" />}
+            placeholder="Pesquisar unidade ou clinic ID"
+          />
+        </div>
+
+        <Card className="mt-8 border-slate-200 bg-slate-50/70">
+          <CardHeader
+            title="Unidade ativa"
+            subtitle={clinicId ? `Clinic ID selecionado: ${clinicId}` : "Nenhuma unidade selecionada"}
+          />
+          <CardBody>
+            <p className="text-sm text-slate-500">
+              A unidade padrão já começa com <strong>Araguaína (ID 8020)</strong>.
+            </p>
+          </CardBody>
+        </Card>
+
+        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
     <div className="relative min-h-screen w-full bg-[#f6f7fb] py-4 sm:py-6">
       
       {/* Container Principal Full Width */}
@@ -118,6 +180,9 @@ export default function UnitSelectPage() {
           ))}
         </div>
       </div>
+    </div>
+  );
+}
   
       {/* Assistente de IA - Desktop (Agora no Canto Inferior Direito) */}
       <div className="fixed bottom-6 right-6 z-50 hidden xl:block">

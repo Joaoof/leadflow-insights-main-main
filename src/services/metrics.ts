@@ -1,27 +1,45 @@
 import { api } from "@/lib/api";
+import { cleanParams, toInt } from "@/lib/http";
 import type { LiveMetrics } from "@/types";
 
+export interface DashboardMetricsParams {
+  clinicId?: number | string;
+  attendantType?: string;
+}
+
 export const metricsService = {
-  async dashboard(params: { clinicId?: string; attendantType?: string }): Promise<LiveMetrics> {
-    const { data } = await api.get<LiveMetrics>("/metrics/dashboard", { params });
+  async dashboard(params: DashboardMetricsParams): Promise<LiveMetrics> {
+    const { data } = await api.get<LiveMetrics>("/metrics/dashboard", {
+      params: cleanParams({
+        clinicId: toInt(params.clinicId),
+        attendantType: params.attendantType,
+      }),
+    });
+
     return data ?? {};
   },
-  async resumo(clinicId?: string): Promise<LiveMetrics> {
+
+  async resumo(clinicId?: number | string): Promise<LiveMetrics> {
     const { data } = await api.get<LiveMetrics>("/metrics/resumo", {
-      params: { clinicId },
+      params: cleanParams({ clinicId: toInt(clinicId) }),
     });
+
     return data ?? {};
   },
-  async fila(clinicId?: string): Promise<LiveMetrics> {
+
+  async fila(clinicId?: number | string): Promise<LiveMetrics> {
     const { data } = await api.get<LiveMetrics>("/metrics/fila", {
-      params: { clinicId },
+      params: cleanParams({ clinicId: toInt(clinicId) }),
     });
+
     return data ?? {};
   },
-  async completo(clinicId?: string): Promise<LiveMetrics> {
+
+  async completo(clinicId?: number | string): Promise<LiveMetrics> {
     const { data } = await api.get<LiveMetrics>("/metrics/completo", {
-      params: { clinicId },
+      params: cleanParams({ clinicId: toInt(clinicId) }),
     });
+
     return data ?? {};
   },
 };

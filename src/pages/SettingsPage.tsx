@@ -9,6 +9,10 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { configService } from "@/services/config";
 import {
+  setAdminKey,
+  setCloudiaBaseUrl,
+  setCloudiaBearerToken,
+} from "@/lib/api";
   setAdminKey} from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 
@@ -109,6 +113,10 @@ export default function SettingsPage() {
             <p className="text-xs text-slate-400">
               O app envia isso automaticamente nos headers <code>X-Cloudia-Bearer</code> e <code>X-Cloudia-Base-Url</code>.
             </p>
+
+            <Button onClick={saveCloudiaLocalConfig} className="w-full justify-center">
+              Salvar Cloudia local
+            </Button>
           </CardBody>
         </Card>
 

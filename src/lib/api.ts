@@ -1,4 +1,5 @@
 import axios, { AxiosError } from "axios";
+import type { ProblemDetails } from "@/types";
 import toast from "react-hot-toast";
 
 export const API_BASE_URL =
@@ -32,11 +33,11 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (r) => r,
-  (error: AxiosError<any>) => {
+  (error: AxiosError<ProblemDetails>) => {
     const status = error.response?.status;
     const msg =
-      (error.response?.data as any)?.message ||
-      (error.response?.data as any)?.error ||
+      error.response?.data?.detail ||
+      error.response?.data?.title ||
       error.message;
 
     if (status === 401) {

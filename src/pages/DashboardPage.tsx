@@ -90,7 +90,7 @@ export default function DashboardPage() {
   });
   const ativos = useQuery({
     queryKey: ["active", clinicId],
-    queryFn: () => webhooksService.activeLeads({ limit: 10 }),
+    queryFn: () => webhooksService.activeLeads({ limit: 10, unitId: clinicId || undefined }),
   });
 
   const total = states.data?.total ?? 0;
